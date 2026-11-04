@@ -13,8 +13,7 @@
     "typecheck": "tsc --noEmit -p tsconfig.json"
   },
   "dependencies": {
-    "@suite/contracts": "0.1.0",
-    "@suite/files": "0.1.0"
+    "@suite/contracts": "0.1.0"
   },
   "devDependencies": {
     "@types/node": "^26.6.5",

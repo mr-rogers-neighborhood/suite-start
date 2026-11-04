@@ -1,7 +1,7 @@
 {
   "name": "@suite/files",
   "version": "0.1.0",
-  "description": "File mechanics shared by the suite's apps: base64 snapshots, size ceilings, backup naming and retention planning, archive-path validation. Pure; no fs, no app schema.",
+  "description": "File mechanics shared by the suite's apps: base64 snapshots, size ceilings, backup naming and retention planning, archive-path validation, and the fs half under ./node. One package with two entry points, so a renderer importing `.` never pulls `fs`.",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -11,6 +11,12 @@
       "development": "./src/index.ts",
       "import": "./dist/index.js",
       "default": "./dist/index.js"
+    },
+    "./node": {
+      "types": "./dist/node/index.d.ts",
+      "development": "./src/node/index.ts",
+      "import": "./dist/node/index.js",
+      "default": "./dist/node/index.js"
     }
   },
   "files": [
@@ -22,10 +28,10 @@
     "prepare": "tsc -p tsconfig.build.json"
   },
   "dependencies": {
-    "@suite/contracts": "workspace:*",
     "zod": "^4.6.7"
   },
   "devDependencies": {
+    "@types/node": "^26.6.5",
     "typescript": "~5.9.3",
     "vitest": "^5.0.5"
   },

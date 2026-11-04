@@ -1,5 +1,3 @@
-import type { ContractIssue } from "@suite/contracts";
-import { describeIssues, parseWith } from "@suite/contracts";
 import type { z } from "zod";
 import { base64ToBytes, bytesToBase64 } from "./base64.js";
 import { checkEnvelopeSize, type LimitBreach, MAX_ENVELOPE_BYTES } from "./limits.js";
@@ -14,6 +12,12 @@ import { checkEnvelopeSize, type LimitBreach, MAX_ENVELOPE_BYTES } from "./limit
  * of throwing.
  */
 
+/** One reason a shape did not match. Structurally the contracts' issue, without the import. */
+export interface EnvelopeIssue {
+  readonly path: string;
+  readonly message: string;
+}
+
 export type EnvelopeFailure = "too-large" | "not-json";
 export type SnapshotFailure = "not-base64" | LimitBreach;
 
@@ -23,7 +27,7 @@ export type EnvelopeParse<T> =
       readonly ok: false;
       readonly reason: EnvelopeFailure;
       /** Present when the JSON parsed but the shape did not match. */
-      readonly issues?: readonly ContractIssue[];
+      readonly issues?: readonly EnvelopeIssue[];
     };
 
 export type SnapshotDecode =
@@ -48,9 +52,16 @@ export function readEnvelopeJson<T>(schema: z.ZodType<T>, text: string): Envelop
     return { ok: false, reason: "not-json" };
   }
 
-  const parsed = parseWith(schema, value);
-  if (parsed.ok) return { ok: true, value: parsed.value };
-  return { ok: false, reason: "not-json", issues: parsed.issues };
+  const parsed = schema.safeParse(value);
+  if (parsed.success) return { ok: true, value: parsed.data };
+  return {
+    ok: false,
+    reason: "not-json",
+    issues: parsed.error.issues.map((issue) => ({
+      path: issue.path.map(String).join("."),
+      message: issue.message,
+    })),
+  };
 }
 
 /** A snapshot as it appears inside an envelope. */
@@ -76,7 +87,8 @@ export function decodeSnapshot(value: string): SnapshotDecode {
 /** One sentence for a refusal, for a toast or a log line. */
 export function describeEnvelopeFailure(failure: EnvelopeParse<unknown>): string {
   if (failure.ok) return "";
-  if (failure.issues && failure.issues.length > 0) return describeIssues(failure.issues);
+  const first = failure.issues?.[0];
+  if (first) return first.path.length > 0 ? `${first.path}: ${first.message}` : first.message;
   return failure.reason === "too-large"
     ? `the file is larger than ${Math.round(MAX_ENVELOPE_BYTES / (1024 * 1024))} MB`
     : "the file is not a Suite document";

@@ -18,15 +18,16 @@ description:
 
 ## Packages
 
-| Package             | Owns                                                                          | Does not own                  |
-| ------------------- | ----------------------------------------------------------------------------- | ----------------------------- |
-| `@suite/contracts`  | `suite.app`, `suite.deployment`, deep-link parsing, contract versioning       | Any app schema, any I/O       |
-| `@suite/files`      | Envelope mechanics, base64, size limits, backup naming and retention planning | `fs`, an app's envelope shape |
-| `@suite/files-node` | Atomic write, fsync-then-rename, applying a retention plan                    | Parsing an app's document     |
-| `apps/start`        | App discovery, launch plans, `suite://` routing                               | App UI, app documents         |
+| Package            | Owns                                                                          | Does not own                  |
+| ------------------ | ----------------------------------------------------------------------------- | ----------------------------- |
+| `@suite/contracts` | `suite.app`, `suite.deployment`, deep-link parsing, contract versioning       | Any app schema, any I/O       |
+| `@suite/files`     | Envelope mechanics, base64, size limits, backup naming and retention planning | `fs`, an app's envelope shape |
+| `apps/start`       | App discovery, launch plans, `suite://` routing                               | App UI, app documents         |
 
-`@suite/files` is pure so it can run in a renderer; `@suite/files-node` is where `fs` lives. That
-split is the point: an app imports the pure half and its own main process imports the other.
+`@suite/files` has two entry points: `.` is pure and can run in a renderer, `./node` is where `fs`
+lives. They are one package because a package that depends on a sibling cannot be installed from a git
+URL — pnpm refuses a git subdependency outright. The split is preserved as subpaths, so a renderer
+importing `.` still never reaches `fs`.
 
 ## Gate
 

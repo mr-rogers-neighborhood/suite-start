@@ -1,6 +1,6 @@
 import { readdir, rm } from "node:fs/promises";
 import { basename, dirname, join } from "node:path";
-import { backupFileName, planRetention } from "@suite/files";
+import { backupFileName, planRetention } from "../backups.js";
 import { copyFileAtomic } from "./atomic.js";
 import { FileMechanicsError } from "./errors.js";
 

@@ -181,9 +181,6 @@ importers:
       '@suite/contracts':
         specifier: 0.1.0
         version: link:../../packages/contracts
-      '@suite/files':
-        specifier: 0.1.0
-        version: link:../../packages/files
     devDependencies:
       '@types/node':
         specifier: ^26.6.5
@@ -210,25 +207,9 @@ importers:
 
   packages/files:
     dependencies:
-      '@suite/contracts':
-        specifier: workspace:*
-        version: link:../contracts
       zod:
         specifier: ^4.6.7
         version: 4.6.7
-    devDependencies:
-      typescript:
-        specifier: ~5.9.3
-        version: 5.9.3
-      vitest:
-        specifier: ^5.0.5
-        version: 5.1.0(@types/node@26.6.6)(vite@8.3.5(@types/node@26.6.6))
-
-  packages/files-node:
-    dependencies:
-      '@suite/files':
-        specifier: 0.1.0
-        version: link:../files
     devDependencies:
       '@types/node':
         specifier: ^26.6.5

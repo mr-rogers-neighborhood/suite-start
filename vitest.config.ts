@@ -31,13 +31,6 @@ export default defineConfig({
       },
       {
         test: {
-          name: "files-node",
-          environment: "node",
-          include: ["packages/files-node/src/**/*.test.ts"],
-        },
-      },
-      {
-        test: {
           name: "start",
           environment: "node",
           include: ["apps/start/src/**/*.test.ts"],
