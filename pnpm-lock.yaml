@@ -179,10 +179,10 @@ importers:
   apps/start:
     dependencies:
       '@suite/contracts':
-        specifier: workspace:*
+        specifier: 0.1.0
         version: link:../../packages/contracts
       '@suite/files':
-        specifier: workspace:*
+        specifier: 0.1.0
         version: link:../../packages/files
     devDependencies:
       '@types/node':
@@ -227,7 +227,7 @@ importers:
   packages/files-node:
     dependencies:
       '@suite/files':
-        specifier: workspace:*
+        specifier: 0.1.0
         version: link:../files
     devDependencies:
       '@types/node':

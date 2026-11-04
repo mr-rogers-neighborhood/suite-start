@@ -13,12 +13,17 @@
     "typecheck": "tsc --noEmit -p tsconfig.json"
   },
   "dependencies": {
-    "@suite/contracts": "workspace:*",
-    "@suite/files": "workspace:*"
+    "@suite/contracts": "0.1.0",
+    "@suite/files": "0.1.0"
   },
   "devDependencies": {
     "@types/node": "^26.6.5",
     "typescript": "~5.9.3",
     "vitest": "^5.0.5"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mr-rogers-neighborhood/suite-start.git",
+    "directory": "apps/start"
   }
 }
