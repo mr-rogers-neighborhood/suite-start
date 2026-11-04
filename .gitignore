@@ -1,6 +1,10 @@
 node_modules/
-dist/
 .turbo/
 coverage/
 *.tsbuildinfo
 .DS_Store
+
+# A consumer installs these packages from a git URL, where pnpm refuses to run a
+# git subdependency's build scripts without an allowlist keyed by the resolved
+# commit. So `dist` ships. `pnpm check` rebuilds and fails if it has drifted.
+!packages/*/dist/
