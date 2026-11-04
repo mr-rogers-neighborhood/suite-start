@@ -1,0 +1,24 @@
+{
+  "name": "@suite/start",
+  "version": "0.1.0",
+  "private": true,
+  "description": "The Suite launcher: discovers installed apps from signed manifests, routes suite:// links and files, and starts the right process. It never holds a document.",
+  "type": "module",
+  "bin": {
+    "suite-start": "./dist/cli.js"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "start": "node dist/cli.js",
+    "typecheck": "tsc --noEmit -p tsconfig.json"
+  },
+  "dependencies": {
+    "@suite/contracts": "workspace:*",
+    "@suite/files": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.5",
+    "typescript": "~5.9.3",
+    "vitest": "^5.0.5"
+  }
+}
