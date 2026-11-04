@@ -38,9 +38,33 @@ pnpm check
 Biome, a workspace build, `tsc` across every package, then Vitest. Every gate is local; no CI service
 gates this repository.
 
-## Publishing
+## Consuming these packages
 
-`@suite/contracts` and `@suite/files` are consumed by the app repositories, which pin exact versions.
-Publish a pre-release with `pnpm publish:packages` once the registry and scope are settled; see the
-open item in the canvas refactor plan. Until then the apps consume them through a packed tarball,
-never through a relative path into this checkout.
+The app repositories install the two packages from this repository at a tag, not from a registry:
+
+```json
+"@suite/contracts": "git+https://github.com/mr-rogers-neighborhood/suite-start.git#v0.1.0&path:/packages/contracts",
+"@suite/files": "git+https://github.com/mr-rogers-neighborhood/suite-start.git#v0.1.0&path:/packages/files"
+```
+
+Three properties make that work, and each one is deliberate:
+
+- **No package depends on a sibling.** pnpm refuses an exotic dependency in a subdependency
+  (`ERR_PNPM_EXOTIC_SUBDEP`), so the fs half lives at `@suite/files/node` rather than in its own
+  package.
+- **`dist` is committed.** pnpm will not run a git subdependency's build scripts without an
+  `allowBuilds` entry keyed by the _resolved commit_, which changes on every commit. `pnpm check`
+  rebuilds and fails if the committed output has drifted.
+- **The tag is the version.** A consumer pins `#v0.1.0`; bumping it means changing two specifiers in
+  one reviewable change.
+
+GitHub Packages was the first choice and cannot host these names: its docs require the package scope to
+equal the repository owner, so `@suite/contracts` would have to become
+`@mr-rogers-neighborhood/contracts`, and publishing there needs a classic personal access token rather
+than the OAuth token `gh auth` issues.
+
+## Releasing
+
+1. `pnpm check` — green, including the `dist` drift check.
+2. `git tag vX.Y.Z && git push origin main --tags`.
+3. Update the two specifiers in the consuming repository.
