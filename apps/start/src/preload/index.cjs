@@ -1,5 +1,5 @@
 /*
- * The launcher bridge.
+ * The hub bridge.
  *
  * CommonJS because a sandboxed preload cannot use ESM imports. The channel names
  * are spelled here for the same reason, and `bridge.test.ts` fails if they drift
@@ -17,4 +17,8 @@ contextBridge.exposeInMainWorld("suiteStart", {
   recents: () => ipcRenderer.invoke("suite:start:recents"),
   forgetRecent: (path) => ipcRenderer.invoke("suite:start:forget", path),
   info: () => ipcRenderer.invoke("suite:start:info"),
+  // The window outlives no page load, so the listener is never removed.
+  onChanged: (listener) => {
+    ipcRenderer.on("suite:start:changed", (_event, state) => listener(state));
+  },
 });

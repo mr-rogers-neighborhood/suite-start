@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
-import { START_IPC } from "./shared.js";
+import { START_CHANGED, START_IPC } from "./shared.js";
 
 /**
  * The preload cannot import the shared constants, so its channel names are
@@ -22,6 +22,10 @@ describe("the launcher bridge", () => {
 
   it("exposes the one global the page looks for", () => {
     expect(preload).toContain('exposeInMainWorld("suiteStart"');
+  });
+
+  it("listens on the channel the main process broadcasts to", () => {
+    expect(preload).toContain(`"${START_CHANGED}"`);
   });
 
   it("does not take a path from the page", () => {

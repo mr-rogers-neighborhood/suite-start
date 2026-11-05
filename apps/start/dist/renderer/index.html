@@ -4,42 +4,135 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <title>Suite Start</title>
+    <title>Suite</title>
     <link rel="stylesheet" href="launcher.css" />
   </head>
   <body>
-    <header class="head">
-      <h1>Suite</h1>
-      <div class="head-actions">
-        <button id="add" type="button" class="button">Add app…</button>
-      </div>
-    </header>
+    <div class="app">
+      <nav class="rail" aria-label="Sections">
+        <div class="rail-brand">
+          <h1>Suite</h1>
+          <p id="version" class="rail-version"></p>
+        </div>
 
-    <main>
-      <section aria-labelledby="apps-heading">
-        <h2 id="apps-heading">Apps</h2>
-        <ul id="apps" class="cards"></ul>
-        <p id="apps-empty" class="empty" hidden>
-          Nothing installed yet. Use <strong>Add app…</strong> to pick an application's executable.
-        </p>
-      </section>
+        <div class="rail-list" role="tablist" aria-orientation="vertical">
+          <button
+            id="tab-apps"
+            class="rail-tab"
+            type="button"
+            role="tab"
+            aria-selected="true"
+            aria-controls="panel-apps"
+          >
+            <span>Apps</span>
+            <span id="count-apps" class="rail-count" hidden></span>
+          </button>
+          <button
+            id="tab-files"
+            class="rail-tab"
+            type="button"
+            role="tab"
+            aria-selected="false"
+            aria-controls="panel-files"
+            tabindex="-1"
+          >
+            <span>Files</span>
+          </button>
+          <button
+            id="tab-sync"
+            class="rail-tab"
+            type="button"
+            role="tab"
+            aria-selected="false"
+            aria-controls="panel-sync"
+            tabindex="-1"
+          >
+            <span>Sync</span>
+          </button>
+          <button
+            id="tab-settings"
+            class="rail-tab"
+            type="button"
+            role="tab"
+            aria-selected="false"
+            aria-controls="panel-settings"
+            tabindex="-1"
+          >
+            <span>Settings</span>
+          </button>
+        </div>
 
-      <section aria-labelledby="recents-heading" id="recents-section" hidden>
-        <h2 id="recents-heading">Recent files</h2>
-        <ul id="recents" class="rows"></ul>
-      </section>
+        <div class="rail-foot">
+          <button id="add" type="button" class="button">Add app…</button>
+        </div>
+      </nav>
 
-      <section aria-labelledby="refused-heading" id="refused-section" hidden>
-        <h2 id="refused-heading">Needs attention</h2>
-        <ul id="refused" class="rows"></ul>
-      </section>
-    </main>
+      <main class="content">
+        <section id="panel-apps" role="tabpanel" aria-labelledby="tab-apps">
+          <header class="pane-head">
+            <h2>Apps</h2>
+            <p class="pane-note">
+              Installed Suite apps. Start launches them; it never opens or edits your documents.
+            </p>
+          </header>
+          <ul id="apps" class="cards"></ul>
+          <p id="apps-empty" class="empty" hidden>
+            Nothing installed yet. Use <strong>Add app…</strong> to pick an application's
+            executable.
+          </p>
 
-    <footer class="foot">
-      <span id="version"></span>
-      <span class="foot-note">Suite Start launches apps. It never opens or edits your documents.</span>
-    </footer>
+          <section id="refused-section" aria-labelledby="refused-heading" hidden>
+            <h3 id="refused-heading">Needs attention</h3>
+            <ul id="refused" class="rows"></ul>
+          </section>
+        </section>
 
-    <script src="launcher.js"></script>
+        <section id="panel-files" role="tabpanel" aria-labelledby="tab-files" hidden>
+          <header class="pane-head">
+            <h2>Files</h2>
+            <p class="pane-note">Files Start has opened, newest first.</p>
+          </header>
+          <ul id="recent-files" class="rows"></ul>
+          <p id="files-empty" class="empty" hidden>
+            Nothing opened from Start yet. A file you double-click opens in its app and appears
+            here.
+          </p>
+        </section>
+
+        <section id="panel-sync" role="tabpanel" aria-labelledby="tab-sync" hidden>
+          <header class="pane-head">
+            <h2>Sync</h2>
+            <p class="pane-note">
+              This build runs local-only: no relay, no account, and no network request.
+            </p>
+          </header>
+          <div class="switch-block">
+            <label class="switch">
+              <input id="sync-toggle" type="checkbox" disabled aria-describedby="sync-reason" />
+              <span>Sync through a relay</span>
+            </label>
+            <p id="sync-reason" class="pane-note">
+              No relay is configured for this build. Sync turns on when a relay is running and
+              paired with this computer.
+            </p>
+          </div>
+        </section>
+
+        <section
+          id="panel-settings"
+          role="tabpanel"
+          aria-labelledby="tab-settings"
+          hidden
+        >
+          <header class="pane-head">
+            <h2>Settings</h2>
+            <p class="pane-note">Where Start keeps its own state. It writes nothing else.</p>
+          </header>
+          <dl id="settings" class="settings"></dl>
+        </section>
+      </main>
+    </div>
+
+    <script type="module" src="launcher.js"></script>
   </body>
 </html>

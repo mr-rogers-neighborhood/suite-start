@@ -1,5 +1,5 @@
 /**
- * What the launcher window asks the main process for.
+ * What the hub window asks the main process for.
  *
  * Same discipline as the Canvas bridge: no method takes a path it wants written,
  * and every one is a capability the main process chooses to grant. `addApp` runs
@@ -15,6 +15,8 @@ export declare const START_IPC: {
     readonly forgetRecent: "suite:start:forget";
     readonly info: "suite:start:info";
 };
+/** Pushed rather than invoked: the window redraws from what arrives here. */
+export declare const START_CHANGED = "suite:start:changed";
 export type StartChannel = (typeof START_IPC)[keyof typeof START_IPC];
 /** One app card. */
 export interface AppCard {
@@ -38,10 +40,16 @@ export interface RefusedInstall {
     readonly path: string;
     readonly reason: string;
 }
+/** What Start knows about itself, for the Settings pane. */
+export interface StartSettings {
+    readonly dataDirectory: string;
+    readonly installRoots: readonly string[];
+}
 export interface LauncherState {
     readonly apps: readonly AppCard[];
     readonly recents: readonly RecentCard[];
     readonly refused: readonly RefusedInstall[];
+    readonly settings: StartSettings;
     readonly version: string;
 }
 //# sourceMappingURL=shared.d.ts.map

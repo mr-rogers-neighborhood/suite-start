@@ -8,15 +8,21 @@ import { defaultRoots, nodeRegistryFileSystem } from "./nodeFileSystem.js";
 import { RECENT_LIMIT, type RecentsFile, recentsFile } from "./recents.js";
 import { appById, type DiscoveredApp, discoverApps, type InstallRecord } from "./registry.js";
 import { describeRouteRejection, routeLaunch } from "./route.js";
-import { type AppCard, type LauncherState, type RecentCard, START_IPC } from "./shared.js";
+import {
+  type AppCard,
+  type LauncherState,
+  type RecentCard,
+  START_CHANGED,
+  START_IPC,
+} from "./shared.js";
 
 /**
  * Suite Start.
  *
- * A launcher and nothing more: it discovers apps, starts one, and remembers what
- * was opened. It holds no document, proxies no bytes, and never runs an app's
- * code — which is what keeps one app's bad update from taking the other two down
- * with it.
+ * The suite's home: it discovers apps, starts one, remembers what was opened,
+ * and reports what it knows. It holds no document, proxies no bytes, and never
+ * runs an app's code — which is what keeps one app's bad update from taking the
+ * other two down with it.
  */
 
 /**
@@ -101,7 +107,13 @@ async function state(): Promise<LauncherState> {
     })
     .slice(0, RECENT_LIMIT);
 
-  return { apps: cards, recents: recentCards, refused, version: app.getVersion() };
+  return {
+    apps: cards,
+    recents: recentCards,
+    refused,
+    settings: { dataDirectory, installRoots: roots() },
+    version: app.getVersion(),
+  };
 }
 
 /**
@@ -135,7 +147,7 @@ async function open(target: string): Promise<void> {
 
 async function broadcast(): Promise<void> {
   if (!window) return;
-  window.webContents.send("suite:start:changed", await state());
+  window.webContents.send(START_CHANGED, await state());
 }
 
 /** Register an app from an executable the user picked. */
