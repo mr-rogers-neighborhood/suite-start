@@ -41,6 +41,12 @@
       "development": "./src/release.ts",
       "import": "./dist/release.js",
       "default": "./dist/release.js"
+    },
+    "./suite-apps": {
+      "types": "./dist/suiteApps.d.ts",
+      "development": "./src/suiteApps.ts",
+      "import": "./dist/suiteApps.js",
+      "default": "./dist/suiteApps.js"
     }
   },
   "files": [

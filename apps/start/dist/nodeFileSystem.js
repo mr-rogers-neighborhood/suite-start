@@ -1,11 +1,11 @@
-import { readdir, readFile } from "node:fs/promises";
+import { readdir, readFile, stat } from "node:fs/promises";
 import { join } from "node:path";
 /**
- * The real filesystem behind the registry port.
+ * The real filesystem behind the two ports.
  *
- * Small on purpose: discovery needs to list a directory and read one file, and
- * keeping it to that is what lets the launcher's rules be tested without
- * touching a disk.
+ * Small on purpose: discovery needs to list a directory and read one file, the
+ * index needs the files in a folder and their times. Keeping it to that is what
+ * lets the hub's rules be tested without touching a disk.
  */
 export function nodeRegistryFileSystem() {
     return {
@@ -16,12 +16,20 @@ export function nodeRegistryFileSystem() {
             const entries = await readdir(path, { withFileTypes: true });
             return entries.filter((entry) => entry.isDirectory()).map((entry) => entry.name);
         },
+        async listFiles(path) {
+            const entries = await readdir(path, { withFileTypes: true });
+            return entries.filter((entry) => entry.isFile()).map((entry) => entry.name);
+        },
+        async modifiedAt(path) {
+            const stats = await stat(path);
+            return stats.mtimeMs;
+        },
     };
 }
 /** Where an install's directory roots live for this platform. */
 export function defaultRoots(home, platform) {
-    // Data goes under the XDG/Apple/Windows convention; the launcher only ever
-    // reads a manifest out of here, never a document.
+    // Data goes under the XDG/Apple/Windows convention; the hub only ever reads a
+    // manifest out of here, never a document.
     if (platform === "darwin")
         return [join(home, "Library", "Application Support", "Suite", "apps")];
     if (platform === "win32")

@@ -1,4 +1,4 @@
-import { readFile, writeFile } from "node:fs/promises";
+import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { expect, test } from "@playwright/test";
 import { fakeApp, install, launch, launchedWith, type Sandbox, sandbox } from "./launcher.js";
@@ -215,7 +215,7 @@ test("marks an app with an update from a catalog file", async () => {
     await expect(run.page.locator(".card-update")).toHaveText("stable · Update available");
 
     await run.page.getByRole("tab", { name: "Settings" }).click();
-    await expect(run.page.locator("#settings dd").nth(1)).toHaveText(
+    await expect(run.page.locator("#catalog-value")).toHaveText(
       `Read from ${catalogPath}. Never fetched.`,
     );
   } finally {
@@ -239,7 +239,7 @@ test("refuses a malformed catalog by field name", async () => {
     // which field was wrong rather than "invalid catalog".
     await expect(run.page.locator(".card-update")).toHaveText("stable · Update state unknown");
     await run.page.getByRole("tab", { name: "Settings" }).click();
-    await expect(run.page.locator("#settings dd").nth(1)).toContainText("formatVersion");
+    await expect(run.page.locator("#catalog-value")).toContainText("formatVersion");
   } finally {
     await run.close();
   }
@@ -253,9 +253,110 @@ test("says the update state is unknown when no catalog is configured", async () 
   try {
     await expect(run.page.locator(".card-update")).toHaveText("stable · Update state unknown");
     await run.page.getByRole("tab", { name: "Settings" }).click();
-    await expect(run.page.locator("#settings dd").nth(1)).toHaveText(
+    await expect(run.page.locator("#catalog-value")).toHaveText(
       "No catalog configured, so update states are unknown.",
     );
+  } finally {
+    await run.close();
+  }
+});
+
+test("lists every app's files under the app that claims the extension", async () => {
+  const canvas = await fakeApp(box, { id: "canvas", name: "Suite Canvas" });
+  const budget = await fakeApp(box, { id: "budget", name: "Suite Budget", extensions: ["budget"] });
+  await writeFile(
+    join(box.data, "installs.json"),
+    JSON.stringify({
+      apps: [
+        { id: "canvas", executable: canvas.executable, manifestPath: canvas.manifestPath },
+        { id: "budget", executable: budget.executable, manifestPath: budget.manifestPath },
+      ],
+    }),
+  );
+
+  const documents = join(box.root, "documents");
+  await mkdir(join(documents, "Canvas"), { recursive: true });
+  await mkdir(join(documents, "Budget"), { recursive: true });
+  await writeFile(join(documents, "Canvas", "Research.canvas"), "{}");
+  await writeFile(join(documents, "Canvas", "Field notes.canvas"), "{}");
+  await writeFile(join(documents, "Budget", "Q4.budget"), "{}");
+
+  const run = await launch(box, [], { SUITE_START_DOCUMENTS: documents });
+  try {
+    await run.page.getByRole("tab", { name: "Files" }).click();
+    await expect(run.page.locator("#all-files .row-name")).toHaveCount(3);
+    const names = await run.page.locator("#all-files .row-name").allTextContents();
+    expect(names.sort()).toEqual(["Field notes.canvas", "Q4.budget", "Research.canvas"]);
+
+    const budgetRow = run.page.locator("#all-files .row", { hasText: "Q4.budget" });
+    await expect(budgetRow.locator(".row-meta")).toContainText("Budget");
+  } finally {
+    await run.close();
+  }
+});
+
+test("opens a file from the index through the app that owns it", async () => {
+  const app = await fakeApp(box, { extensions: ["canvas"] });
+  await install(box, { id: "canvas", executable: app.executable, manifestPath: app.manifestPath });
+
+  const documents = join(box.root, "documents");
+  await mkdir(join(documents, "Canvas"), { recursive: true });
+  const document = join(documents, "Canvas", "Research.canvas");
+  await writeFile(document, "{}");
+
+  const run = await launch(box, [], { SUITE_START_DOCUMENTS: documents });
+  try {
+    await run.page.getByRole("tab", { name: "Files" }).click();
+    await run.page.locator("#all-files .row-open", { hasText: "Research.canvas" }).click();
+    await expect
+      .poll(async () => launchedWith(app.logPath), { timeout: 15_000 })
+      .toEqual([document]);
+  } finally {
+    await run.close();
+  }
+});
+
+test("names a file whose app is not installed instead of hiding it", async () => {
+  const app = await fakeApp(box);
+  await install(box, { id: "canvas", executable: app.executable, manifestPath: app.manifestPath });
+
+  const documents = join(box.root, "documents");
+  await mkdir(join(documents, "Planner"), { recursive: true });
+  await writeFile(join(documents, "Planner", "Week 45.planner"), "{}");
+
+  const run = await launch(box, [], { SUITE_START_DOCUMENTS: documents });
+  try {
+    await run.page.getByRole("tab", { name: "Files" }).click();
+    const row = run.page.locator("#all-files .row", { hasText: "Week 45.planner" });
+    await expect(row.locator(".row-meta")).toHaveText("Planner · no app installed");
+    // Nothing to open it with, so the row is not a button.
+    await expect(row.locator("button")).toHaveCount(0);
+  } finally {
+    await run.close();
+  }
+});
+
+test("drops a deleted file when the window refreshes", async () => {
+  const app = await fakeApp(box);
+  await install(box, { id: "canvas", executable: app.executable, manifestPath: app.manifestPath });
+
+  const documents = join(box.root, "documents");
+  await mkdir(join(documents, "Canvas"), { recursive: true });
+  const kept = join(documents, "Canvas", "Kept.canvas");
+  await writeFile(kept, "{}");
+  await writeFile(join(documents, "Canvas", "Gone.canvas"), "{}");
+
+  const run = await launch(box, [], { SUITE_START_DOCUMENTS: documents });
+  try {
+    await run.page.getByRole("tab", { name: "Files" }).click();
+    await expect(run.page.locator("#all-files .row")).toHaveCount(2);
+
+    await rm(join(documents, "Canvas", "Gone.canvas"));
+    // Focus is the refresh signal: a timer would read every folder on a schedule
+    // whether the window is in front of the person or not.
+    await run.page.evaluate(() => window.dispatchEvent(new Event("focus")));
+    await expect(run.page.locator("#all-files .row")).toHaveCount(1);
+    await expect(run.page.locator("#all-files .row-name")).toHaveText("Kept.canvas");
   } finally {
     await run.close();
   }

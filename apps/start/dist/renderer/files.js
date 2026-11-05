@@ -1,23 +1,56 @@
 import { el, relativeTime } from "./format.js";
 
-/** The Files pane. Until the index lands, this is Start's own history. */
-export function renderFiles(state, actions) {
-  const list = document.getElementById("recent-files");
-  const empty = document.getElementById("files-empty");
-  if (!list || !empty) return;
-  list.replaceChildren();
+/**
+ * The Files pane.
+ *
+ * Two groups and one rule: Start opens a file, and says when there is no app to
+ * open it with. A row for an uninstalled app keeps its place, because hiding it
+ * would make a person's own folder look empty.
+ */
+function fileRow(file, actions) {
+  const row = el("li", "row");
+  const meta = file.installed
+    ? `${file.appName} · ${relativeTime(file.modifiedAt)}`
+    : `${file.appName} · no app installed`;
 
-  empty.hidden = state.recents.length > 0;
-  for (const recent of state.recents) {
+  if (!file.installed) {
+    const label = el("div", "row-open row-missing");
+    label.append(el("span", "row-name", file.name), el("span", "row-meta", meta));
+    row.append(label);
+    return row;
+  }
+
+  const open = el("button", "row-open");
+  open.type = "button";
+  open.append(el("span", "row-name", file.name), el("span", "row-meta", meta));
+  open.addEventListener("click", () => actions.openFile(file.path));
+  row.append(open);
+  return row;
+}
+
+export function renderFiles(state, actions) {
+  const recent = document.getElementById("recent-files");
+  const recentEmpty = document.getElementById("recent-empty");
+  const all = document.getElementById("all-files");
+  const allEmpty = document.getElementById("files-empty");
+  if (!recent || !recentEmpty || !all || !allEmpty) return;
+
+  recent.replaceChildren();
+  recentEmpty.hidden = state.recents.length > 0;
+  for (const entry of state.recents) {
     const row = el("li", "row");
     const open = el("button", "row-open");
     open.type = "button";
     open.append(
-      el("span", "row-name", recent.name),
-      el("span", "row-meta", `${recent.appName} · ${relativeTime(recent.openedAt)}`),
+      el("span", "row-name", entry.name),
+      el("span", "row-meta", `${entry.appName} · ${relativeTime(entry.openedAt)}`),
     );
-    open.addEventListener("click", () => actions.openRecent(recent));
+    open.addEventListener("click", () => actions.openRecent(entry));
     row.append(open);
-    list.append(row);
+    recent.append(row);
   }
+
+  all.replaceChildren();
+  allEmpty.hidden = state.files.length > 0;
+  for (const file of state.files) all.append(fileRow(file, actions));
 }

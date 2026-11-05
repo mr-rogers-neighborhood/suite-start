@@ -90,12 +90,20 @@
         <section id="panel-files" role="tabpanel" aria-labelledby="tab-files" hidden>
           <header class="pane-head">
             <h2>Files</h2>
-            <p class="pane-note">Files Start has opened, newest first.</p>
+            <p class="pane-note">
+              Every Suite app's documents, read from the folder that app writes to. Start lists
+              them; it never renames, moves or edits one.
+            </p>
           </header>
+
+          <h3>Recently opened</h3>
           <ul id="recent-files" class="rows"></ul>
+          <p id="recent-empty" class="empty" hidden>Nothing opened from Start yet.</p>
+
+          <h3>All files</h3>
+          <ul id="all-files" class="rows"></ul>
           <p id="files-empty" class="empty" hidden>
-            Nothing opened from Start yet. A file you double-click opens in its app and appears
-            here.
+            No documents yet. A file an app saves appears here on the next refresh.
           </p>
         </section>
 

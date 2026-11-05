@@ -26,6 +26,10 @@ const actions = {
     await bridge.launch(recent.appId);
     await refresh();
   },
+  async openFile(path) {
+    await bridge.openFile(path);
+    await refresh();
+  },
 };
 
 function render(state) {

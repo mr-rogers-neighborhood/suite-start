@@ -13,12 +13,16 @@ export function renderSettings(state) {
   if (!list) return;
   list.replaceChildren();
 
-  const pair = (term, value) => {
-    list.append(el("dt", null, term), el("dd", null, value));
+  const pair = (term, value, id) => {
+    const valueNode = el("dd", null, value);
+    if (id) valueNode.id = id;
+    list.append(el("dt", null, term), valueNode);
   };
 
   pair("Data directory", state.settings.dataDirectory);
-  pair("Catalog", catalogLine(state.catalog));
+  pair("Documents", state.settings.documentsRoot);
+  pair("Catalog", catalogLine(state.catalog), "catalog-value");
+  pair("Deployment", "Not configured. This build makes no network request.");
   pair("Version", state.version);
 
   const roots = el("dd");

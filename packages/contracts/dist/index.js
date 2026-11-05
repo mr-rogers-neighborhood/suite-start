@@ -5,4 +5,5 @@ export { deploymentAllows, parseDeployment, relayFor, SUITE_DEPLOYMENT_FORMAT, S
 export { describeIssues, parseWith, } from "./parse.js";
 export { joinPath, suitePaths, } from "./paths.js";
 export { catalogState, findReleaseEntry, parseReleaseCatalog, SUITE_RELEASE_CATALOG_FORMAT, SUITE_RELEASE_CATALOG_FORMAT_VERSION, suiteReleaseArtifactSchema, suiteReleaseCatalogSchema, suiteReleaseEntrySchema, } from "./release.js";
+export { appDocumentsFolder, SUITE_APPS, suiteDocumentsRoot, } from "./suiteApps.js";
 //# sourceMappingURL=index.js.map

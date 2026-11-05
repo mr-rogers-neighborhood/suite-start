@@ -14,6 +14,7 @@ export declare const START_IPC: {
     readonly removeApp: "suite:start:remove";
     readonly recents: "suite:start:recents";
     readonly forgetRecent: "suite:start:forget";
+    readonly openFile: "suite:start:open-file";
     readonly info: "suite:start:info";
 };
 /** Pushed rather than invoked: the window redraws from what arrives here. */
@@ -29,6 +30,16 @@ export interface AppCard {
     readonly executable: string;
     readonly fileExtensions: readonly string[];
     readonly lastOpenedAt: number | null;
+}
+/** One file the index found, with the app that claims it. */
+export interface FileCard {
+    readonly path: string;
+    readonly name: string;
+    readonly appId: string;
+    readonly appName: string;
+    readonly folder: string;
+    readonly modifiedAt: number;
+    readonly installed: boolean;
 }
 /** What the catalog said, in the words the Settings pane uses. */
 export interface CatalogSummary {
@@ -52,12 +63,14 @@ export interface RefusedInstall {
 /** What Start knows about itself, for the Settings pane. */
 export interface StartSettings {
     readonly dataDirectory: string;
+    readonly documentsRoot: string;
     readonly installRoots: readonly string[];
 }
 export interface LauncherState {
     readonly apps: readonly AppCard[];
     readonly recents: readonly RecentCard[];
     readonly refused: readonly RefusedInstall[];
+    readonly files: readonly FileCard[];
     readonly settings: StartSettings;
     readonly catalog: CatalogSummary;
     readonly version: string;

@@ -13,6 +13,7 @@ export const START_IPC = {
     removeApp: "suite:start:remove",
     recents: "suite:start:recents",
     forgetRecent: "suite:start:forget",
+    openFile: "suite:start:open-file",
     info: "suite:start:info",
 };
 /** Pushed rather than invoked: the window redraws from what arrives here. */

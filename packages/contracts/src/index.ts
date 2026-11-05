@@ -75,3 +75,11 @@ export {
   suiteReleaseCatalogSchema,
   suiteReleaseEntrySchema,
 } from "./release.js";
+export {
+  appDocumentsFolder,
+  SUITE_APPS,
+  type SuiteAppDocumentsOptions,
+  type SuiteAppEntry,
+  type SuiteDocumentAppId,
+  suiteDocumentsRoot,
+} from "./suiteApps.js";

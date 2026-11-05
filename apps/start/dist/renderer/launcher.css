@@ -272,6 +272,10 @@ h3 {
   overflow-wrap: anywhere;
 }
 
+.row-missing {
+  cursor: default;
+}
+
 .row.refused .row-meta {
   color: var(--danger);
 }

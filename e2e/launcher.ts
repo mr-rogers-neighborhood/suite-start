@@ -23,18 +23,18 @@ export const START_DIR = resolve(fileURLToPath(import.meta.url), "..", "..", "ap
 export interface Sandbox {
   readonly root: string;
   readonly data: string;
-  /** Where the fake executable and its manifest live. */
-  readonly app: string;
+  /** Where every fake app's directory lives, one per app. */
+  readonly apps: string;
   dispose(): Promise<void>;
 }
 
 export async function sandbox(): Promise<Sandbox> {
   const root = await mkdtemp(join(tmpdir(), "suite-start-e2e-"));
   const data = join(root, "data");
-  const app = join(root, "apps", "canvas");
+  const apps = join(root, "apps");
   await mkdir(data, { recursive: true });
-  await mkdir(app, { recursive: true });
-  return { root, data, app, dispose: () => rm(root, { recursive: true, force: true }) };
+  await mkdir(apps, { recursive: true });
+  return { root, data, apps, dispose: () => rm(root, { recursive: true, force: true }) };
 }
 
 /**
@@ -49,8 +49,10 @@ export async function fakeApp(
   options: { id?: string; name?: string; extensions?: string[] } = {},
 ): Promise<{ executable: string; manifestPath: string; logPath: string }> {
   const id = options.id ?? "canvas";
-  const executable = join(box.app, `suite-${id}`);
-  const manifestPath = join(box.app, "suite.app.json");
+  const app = join(box.apps, id);
+  await mkdir(app, { recursive: true });
+  const executable = join(app, `suite-${id}`);
+  const manifestPath = join(app, "suite.app.json");
   const logPath = join(box.root, `${id}-launched.txt`);
 
   await writeFile(executable, `#!/bin/sh\nprintf '%s\\n' "$@" > ${logPath}\n`, { mode: 0o755 });

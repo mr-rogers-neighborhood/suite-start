@@ -1,9 +1,18 @@
 import { spawn } from "node:child_process";
 import { dirname, join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
-import { catalogState, findReleaseEntry, parseDeepLink } from "@suite/contracts";
+import {
+  appDocumentsFolder,
+  catalogState,
+  findReleaseEntry,
+  parseDeepLink,
+  SUITE_APPS,
+  type SuiteAppEntry,
+  suiteDocumentsRoot,
+} from "@suite/contracts";
 import { app, BrowserWindow, dialog, ipcMain, Menu, net, protocol, shell } from "electron";
 import { type CatalogRead, catalogPathFromEnv, readCatalog } from "./catalog.js";
+import { type DocumentsFolder, indexDocuments, isInsideDocuments } from "./fileIndex.js";
 import { type RegistryStore, registryStore } from "./installs.js";
 import { defaultRoots, nodeRegistryFileSystem } from "./nodeFileSystem.js";
 import { RECENT_LIMIT, type RecentsFile, recentsFile } from "./recents.js";
@@ -68,6 +77,30 @@ function roots(): readonly string[] {
   return defaultRoots(app.getPath("home"), process.platform);
 }
 
+/** The documents root, unless `SUITE_START_DOCUMENTS` replaces it for a test. */
+function documentsRoot(): string {
+  return suiteDocumentsRoot(
+    process.platform,
+    app.getPath("home"),
+    process.env.SUITE_START_DOCUMENTS,
+  );
+}
+
+function documentFolders(): readonly DocumentsFolder[] {
+  const platform = process.platform;
+  const home = app.getPath("home");
+  const rootOverride = process.env.SUITE_START_DOCUMENTS;
+  return SUITE_APPS.map((entry: SuiteAppEntry) => ({
+    app: entry,
+    path: appDocumentsFolder(entry, {
+      platform,
+      home,
+      rootOverride,
+      xdgDataHome: process.env.XDG_DATA_HOME,
+    }),
+  }));
+}
+
 async function discover(): Promise<{
   apps: readonly DiscoveredApp[];
   refused: readonly { path: string; reason: string }[];
@@ -90,6 +123,11 @@ async function state(): Promise<LauncherState> {
   const { apps, refused } = await discover();
   const recent = await recents.list();
   const catalogRead = await readCatalog(catalogPathFromEnv(), nodeRegistryFileSystem());
+  const files = await indexDocuments(
+    documentFolders(),
+    nodeRegistryFileSystem(),
+    new Set(apps.map((entry) => entry.manifest.id)),
+  );
 
   const cards: AppCard[] = apps.map((entry) => {
     const channel = entry.manifest.update?.channel ?? "stable";
@@ -129,7 +167,8 @@ async function state(): Promise<LauncherState> {
     apps: cards,
     recents: recentCards,
     refused,
-    settings: { dataDirectory, installRoots: roots() },
+    files,
+    settings: { dataDirectory, documentsRoot: documentsRoot(), installRoots: roots() },
     catalog: catalogSummary(catalogRead),
     version: app.getVersion(),
   };
@@ -266,6 +305,15 @@ function registerIpc(): void {
     if (typeof path !== "string") return;
     await recents.forget(path);
     await broadcast();
+  });
+
+  // The one channel that takes a path, and it takes it only to hand back
+  // something the index already listed: containment is checked in main.
+  ipcMain.handle(START_IPC.openFile, async (_event, path: unknown) => {
+    if (typeof path !== "string") return;
+    const folders = documentFolders().map((folder) => folder.path);
+    if (!isInsideDocuments(path, folders)) return;
+    await open(path);
   });
 
   ipcMain.handle(START_IPC.info, () => ({
