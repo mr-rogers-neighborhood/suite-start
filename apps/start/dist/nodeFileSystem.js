@@ -1,4 +1,4 @@
-import { readdir, readFile, stat } from "node:fs/promises";
+import { access, readdir, readFile, stat } from "node:fs/promises";
 import { join } from "node:path";
 /**
  * The real filesystem behind the two ports.
@@ -15,6 +15,15 @@ export function nodeRegistryFileSystem() {
         async listDirectories(path) {
             const entries = await readdir(path, { withFileTypes: true });
             return entries.filter((entry) => entry.isDirectory()).map((entry) => entry.name);
+        },
+        async exists(path) {
+            try {
+                await access(path);
+                return true;
+            }
+            catch {
+                return false;
+            }
         },
         async listFiles(path) {
             const entries = await readdir(path, { withFileTypes: true });

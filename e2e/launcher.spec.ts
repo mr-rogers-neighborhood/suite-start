@@ -113,10 +113,43 @@ test("shows an install it cannot use rather than pretending it is not there", as
 
   const run = await launch(box);
   try {
-    await expect(run.page.locator("#refused-section")).toBeVisible();
-    await expect(run.page.locator(".row.refused .row-meta")).toContainText("deepLinkPrefix");
-    // And it is not offered as a card, because there is nothing to launch.
-    await expect(run.page.locator(".card")).toHaveCount(0);
+    const card = run.page.locator(".card-refused");
+    await expect(card).toHaveCount(1);
+    await expect(card.locator(".card-health")).toContainText("deepLinkPrefix");
+    // It is a card, and it offers nothing to press: there is nothing to launch.
+    await expect(card.getByRole("button", { name: "Open" })).toHaveCount(0);
+    await expect(run.page.locator("#count-apps")).toHaveText("1");
+  } finally {
+    await run.close();
+  }
+});
+
+test("keeps the rail quiet when every install is healthy", async () => {
+  const app = await fakeApp(box);
+  await install(box, { id: "canvas", executable: app.executable, manifestPath: app.manifestPath });
+
+  const run = await launch(box);
+  try {
+    await expect(run.page.locator(".card-name")).toHaveText("Suite Canvas");
+    await expect(run.page.locator(".card-refused")).toHaveCount(0);
+    await expect(run.page.locator("#count-apps")).toBeHidden();
+  } finally {
+    await run.close();
+  }
+});
+
+test("says an install's executable is missing, and counts it", async () => {
+  const app = await fakeApp(box);
+  await install(box, { id: "canvas", executable: app.executable, manifestPath: app.manifestPath });
+  await rm(app.executable);
+
+  const run = await launch(box);
+  try {
+    const card = run.page.locator(".card-refused");
+    await expect(card.locator(".card-health")).toContainText(
+      "the executable this install names is not there",
+    );
+    await expect(run.page.locator("#count-apps")).toHaveText("1");
   } finally {
     await run.close();
   }
@@ -290,6 +323,11 @@ test("lists every app's files under the app that claims the extension", async ()
 
     const budgetRow = run.page.locator("#all-files .row", { hasText: "Q4.budget" });
     await expect(budgetRow.locator(".row-meta")).toContainText("Budget");
+
+    // The card summarises the index rather than guessing.
+    const canvasCard = run.page.locator('.card[data-app-id="canvas"]');
+    await run.page.getByRole("tab", { name: "Apps" }).click();
+    await expect(canvasCard.locator(".card-files")).toHaveText("2 files");
   } finally {
     await run.close();
   }

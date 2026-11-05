@@ -1,4 +1,4 @@
-import { readdir, readFile, stat } from "node:fs/promises";
+import { access, readdir, readFile, stat } from "node:fs/promises";
 import { join } from "node:path";
 import type { IndexFileSystem } from "./fileIndex.js";
 import type { RegistryFileSystem } from "./registry.js";
@@ -18,6 +18,14 @@ export function nodeRegistryFileSystem(): RegistryFileSystem & IndexFileSystem {
     async listDirectories(path: string): Promise<readonly string[]> {
       const entries = await readdir(path, { withFileTypes: true });
       return entries.filter((entry) => entry.isDirectory()).map((entry) => entry.name);
+    },
+    async exists(path: string): Promise<boolean> {
+      try {
+        await access(path);
+        return true;
+      } catch {
+        return false;
+      }
     },
     async listFiles(path: string): Promise<readonly string[]> {
       const entries = await readdir(path, { withFileTypes: true });

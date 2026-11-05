@@ -198,6 +198,16 @@ h3 {
   color: var(--accent);
 }
 
+.card-refused {
+  border-color: var(--danger);
+}
+
+.card-health {
+  margin: 0;
+  color: var(--danger);
+  font-size: 12px;
+}
+
 .card-actions {
   display: flex;
   gap: 8px;

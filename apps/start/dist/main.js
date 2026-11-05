@@ -1,8 +1,9 @@
 import { spawn } from "node:child_process";
 import { dirname, join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
-import { appDocumentsFolder, catalogState, findReleaseEntry, parseDeepLink, SUITE_APPS, suiteDocumentsRoot, } from "@suite/contracts";
+import { appDocumentsFolder, parseDeepLink, SUITE_APPS, suiteDocumentsRoot, } from "@suite/contracts";
 import { app, BrowserWindow, dialog, ipcMain, Menu, net, protocol, shell } from "electron";
+import { appCards } from "./cards.js";
 import { catalogPathFromEnv, readCatalog } from "./catalog.js";
 import { indexDocuments, isInsideDocuments } from "./fileIndex.js";
 import { registryStore } from "./installs.js";
@@ -92,21 +93,12 @@ async function state() {
     const recent = await recents.list();
     const catalogRead = await readCatalog(catalogPathFromEnv(), nodeRegistryFileSystem());
     const files = await indexDocuments(documentFolders(), nodeRegistryFileSystem(), new Set(apps.map((entry) => entry.manifest.id)));
-    const cards = apps.map((entry) => {
-        const channel = entry.manifest.update?.channel ?? "stable";
-        const release = catalogRead.state === "configured"
-            ? findReleaseEntry(catalogRead.catalog, entry.manifest.id, channel)
-            : null;
-        return {
-            id: entry.manifest.id,
-            name: entry.manifest.name,
-            version: entry.manifest.version,
-            channel,
-            update: catalogState(release, entry.manifest.version),
-            executable: entry.executable,
-            fileExtensions: entry.manifest.fileExtensions,
-            lastOpenedAt: recent.find((row) => row.appId === entry.manifest.id)?.openedAt ?? null,
-        };
+    const cards = appCards({
+        apps,
+        rejected: refused,
+        files,
+        recents: recent,
+        catalog: catalogRead,
     });
     const recentCards = recent
         .flatMap((row) => {
@@ -127,7 +119,6 @@ async function state() {
     return {
         apps: cards,
         recents: recentCards,
-        refused,
         files,
         settings: { dataDirectory, documentsRoot: documentsRoot(), installRoots: roots() },
         catalog: catalogSummary(catalogRead),

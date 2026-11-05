@@ -7,6 +7,11 @@ const UPDATE_LABELS = {
   unknown: "Update state unknown",
 };
 
+function fileCountLabel(count) {
+  if (count === 0) return "No files";
+  return count === 1 ? "1 file" : `${count} files`;
+}
+
 /**
  * The Apps pane.
  *
@@ -22,12 +27,19 @@ export function renderApps(state, actions) {
 
   empty.hidden = state.apps.length > 0;
   for (const app of state.apps) {
-    const card = el("li", "card");
-    card.dataset.appId = app.id;
+    const card = el("li", app.health.ok ? "card" : "card card-refused");
+    if (app.id !== null) card.dataset.appId = app.id;
 
     const title = el("div", "card-title");
     title.append(el("span", "card-name", app.name), el("span", "card-version", app.version));
     card.append(title);
+
+    if (!app.health.ok) {
+      card.append(el("p", "card-health", app.health.reason));
+      list.append(card);
+      continue;
+    }
+
     card.append(
       el(
         "p",
@@ -42,29 +54,20 @@ export function renderApps(state, actions) {
       `${app.channel} · ${UPDATE_LABELS[app.update] ?? UPDATE_LABELS.unknown}`,
     );
     update.dataset.state = app.update;
-    card.append(update);
+    card.append(update, el("p", "card-meta card-files", fileCountLabel(app.fileCount)));
 
     const buttons = el("div", "card-actions");
     const open = el("button", "button primary", "Open");
     open.type = "button";
     open.addEventListener("click", () => actions.launch(app.id));
-    const forget = el("button", "button quiet", "Remove");
-    forget.type = "button";
-    forget.addEventListener("click", () => actions.remove(app.id));
-    buttons.append(open, forget);
+    buttons.append(open);
+    if (app.id !== null) {
+      const forget = el("button", "button quiet", "Remove");
+      forget.type = "button";
+      forget.addEventListener("click", () => actions.remove(app.id));
+      buttons.append(forget);
+    }
     card.append(buttons);
     list.append(card);
-  }
-
-  const section = document.getElementById("refused-section");
-  const refused = document.getElementById("refused");
-  if (!section || !refused) return;
-  refused.replaceChildren();
-  section.hidden = state.refused.length === 0;
-
-  for (const install of state.refused) {
-    const row = el("li", "row refused");
-    row.append(el("span", "row-name", install.path), el("span", "row-meta", install.reason));
-    refused.append(row);
   }
 }

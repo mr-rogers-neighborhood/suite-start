@@ -8,3 +8,6 @@ coverage/
 # git subdependency's build scripts without an allowlist keyed by the resolved
 # commit. So `dist` ships. `pnpm check` rebuilds and fails if it has drifted.
 !packages/*/dist/
+
+# Playwright rewrites its own output on every run.
+e2e/test-results/

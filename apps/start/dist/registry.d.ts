@@ -39,6 +39,8 @@ export interface RegistryFileSystem {
     readonly readText: (path: string) => Promise<string>;
     /** Immediate child directory names under `path`. */
     readonly listDirectories: (path: string) => Promise<readonly string[]>;
+    /** Whether a path the install record names is still on this machine. */
+    readonly exists: (path: string) => Promise<boolean>;
 }
 export interface DiscoverOptions {
     /** Directories whose children each carry a `suite.app.json`. */
@@ -57,6 +59,8 @@ export interface DiscoveredApp {
 export interface RejectedInstall {
     readonly path: string;
     readonly reason: string;
+    /** Present when an install record exists, so the card can offer Remove. */
+    readonly id?: string;
 }
 export interface DiscoveryResult {
     readonly apps: readonly DiscoveredApp[];

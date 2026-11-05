@@ -30,8 +30,14 @@ function file(name: string, contents: string): Record<string, string> {
   return { [`${ROOT}/${name}/${APP_MANIFEST_FILENAME}`]: contents };
 }
 
-function fakeFileSystem(files: Record<string, string>): RegistryFileSystem {
+function fakeFileSystem(
+  files: Record<string, string>,
+  executables: ReadonlySet<string> = new Set(["/opt/suite/canvas"]),
+): RegistryFileSystem {
   return {
+    async exists(path: string): Promise<boolean> {
+      return executables.has(path);
+    },
     async readText(path: string): Promise<string> {
       const contents = files[path];
       if (contents === undefined) throw new Error(`ENOENT ${path}`);
@@ -163,11 +169,33 @@ describe("a record that names its own manifest", () => {
           manifestPath: "/opt/suite-canvas/suite.app.json",
         },
       ],
-      fileSystem: fakeFileSystem(files),
+      fileSystem: fakeFileSystem(files, new Set(["/opt/suite-canvas/suite-canvas"])),
     });
     expect(result.rejected).toEqual([]);
     expect(result.apps).toHaveLength(1);
     expect(result.apps[0]?.executable).toBe("/opt/suite-canvas/suite-canvas");
+  });
+
+  it("is refused when the executable it names is gone", async () => {
+    const files = { "/opt/suite-canvas/suite.app.json": manifest() };
+    const result = await discoverApps({
+      roots: [],
+      records: [
+        {
+          id: "canvas",
+          executable: "/opt/suite-canvas/suite-canvas",
+          manifestPath: "/opt/suite-canvas/suite.app.json",
+        },
+      ],
+      fileSystem: fakeFileSystem(files, new Set()),
+    });
+    // Refused rather than listed: a card whose Open button can only fail is
+    // worse than a card that says what is missing.
+    expect(result.apps).toEqual([]);
+    expect(result.rejected[0]).toMatchObject({
+      id: "canvas",
+      reason: "the executable this install names is not there",
+    });
   });
 
   it("is still checked against the install record it claims", async () => {

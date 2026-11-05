@@ -3,14 +3,13 @@ import { dirname, join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import {
   appDocumentsFolder,
-  catalogState,
-  findReleaseEntry,
   parseDeepLink,
   SUITE_APPS,
   type SuiteAppEntry,
   suiteDocumentsRoot,
 } from "@suite/contracts";
 import { app, BrowserWindow, dialog, ipcMain, Menu, net, protocol, shell } from "electron";
+import { appCards } from "./cards.js";
 import { type CatalogRead, catalogPathFromEnv, readCatalog } from "./catalog.js";
 import { type DocumentsFolder, indexDocuments, isInsideDocuments } from "./fileIndex.js";
 import { type RegistryStore, registryStore } from "./installs.js";
@@ -19,7 +18,6 @@ import { RECENT_LIMIT, type RecentsFile, recentsFile } from "./recents.js";
 import { appById, type DiscoveredApp, discoverApps, type InstallRecord } from "./registry.js";
 import { describeRouteRejection, routeLaunch } from "./route.js";
 import {
-  type AppCard,
   type CatalogSummary,
   type LauncherState,
   type RecentCard,
@@ -129,22 +127,12 @@ async function state(): Promise<LauncherState> {
     new Set(apps.map((entry) => entry.manifest.id)),
   );
 
-  const cards: AppCard[] = apps.map((entry) => {
-    const channel = entry.manifest.update?.channel ?? "stable";
-    const release =
-      catalogRead.state === "configured"
-        ? findReleaseEntry(catalogRead.catalog, entry.manifest.id, channel)
-        : null;
-    return {
-      id: entry.manifest.id,
-      name: entry.manifest.name,
-      version: entry.manifest.version,
-      channel,
-      update: catalogState(release, entry.manifest.version),
-      executable: entry.executable,
-      fileExtensions: entry.manifest.fileExtensions,
-      lastOpenedAt: recent.find((row) => row.appId === entry.manifest.id)?.openedAt ?? null,
-    };
+  const cards = appCards({
+    apps,
+    rejected: refused,
+    files,
+    recents: recent,
+    catalog: catalogRead,
   });
 
   const recentCards: RecentCard[] = recent
@@ -166,7 +154,6 @@ async function state(): Promise<LauncherState> {
   return {
     apps: cards,
     recents: recentCards,
-    refused,
     files,
     settings: { dataDirectory, documentsRoot: documentsRoot(), installRoots: roots() },
     catalog: catalogSummary(catalogRead),

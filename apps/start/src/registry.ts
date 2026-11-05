@@ -44,6 +44,8 @@ export interface RegistryFileSystem {
   readonly readText: (path: string) => Promise<string>;
   /** Immediate child directory names under `path`. */
   readonly listDirectories: (path: string) => Promise<readonly string[]>;
+  /** Whether a path the install record names is still on this machine. */
+  readonly exists: (path: string) => Promise<boolean>;
 }
 
 export interface DiscoverOptions {
@@ -65,6 +67,8 @@ export interface DiscoveredApp {
 export interface RejectedInstall {
   readonly path: string;
   readonly reason: string;
+  /** Present when an install record exists, so the card can offer Remove. */
+  readonly id?: string;
 }
 
 export interface DiscoveryResult {
@@ -172,6 +176,18 @@ export async function discoverApps(options: DiscoverOptions): Promise<DiscoveryR
       rejected.push({
         path: manifestPath,
         reason: "the install record names a relative executable",
+        id: found.id,
+      });
+      continue;
+    }
+    // An install whose executable was moved or uninstalled is not an app the
+    // hub can launch, and a card with a dead Open button is worse than a card
+    // that says what is wrong.
+    if (!(await options.fileSystem.exists(record.executable))) {
+      rejected.push({
+        path: manifestPath,
+        reason: "the executable this install names is not there",
+        id: found.id,
       });
       continue;
     }

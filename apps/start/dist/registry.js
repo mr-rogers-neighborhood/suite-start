@@ -106,6 +106,18 @@ export async function discoverApps(options) {
             rejected.push({
                 path: manifestPath,
                 reason: "the install record names a relative executable",
+                id: found.id,
+            });
+            continue;
+        }
+        // An install whose executable was moved or uninstalled is not an app the
+        // hub can launch, and a card with a dead Open button is worse than a card
+        // that says what is wrong.
+        if (!(await options.fileSystem.exists(record.executable))) {
+            rejected.push({
+                path: manifestPath,
+                reason: "the executable this install names is not there",
+                id: found.id,
             });
             continue;
         }

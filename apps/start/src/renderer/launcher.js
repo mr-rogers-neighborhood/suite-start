@@ -37,6 +37,14 @@ function render(state) {
   renderFiles(state, actions);
   renderSettings(state);
   document.getElementById("version").textContent = `Suite ${state.version}`;
+
+  // The rail carries the one number worth acting on, and hides it at zero so a
+  // healthy hub is quiet.
+  const attention = state.apps.filter((app) => !app.health.ok).length;
+  const badge = document.getElementById("count-apps");
+  badge.hidden = attention === 0;
+  badge.textContent = String(attention);
+  badge.setAttribute("aria-label", `${attention} needing attention`);
 }
 
 async function refresh() {

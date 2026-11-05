@@ -25,16 +25,23 @@ export const START_CHANGED = "suite:start:changed";
 
 export type StartChannel = (typeof START_IPC)[keyof typeof START_IPC];
 
-/** One app card. */
+/** Whether an install can be launched, and why not when it cannot. */
+export type AppHealth = { readonly ok: true } | { readonly ok: false; readonly reason: string };
+
+/** One app card, installed or refused. */
 export interface AppCard {
-  readonly id: string;
+  /** Null for a refused install with no record, because there is nothing to act on. */
+  readonly id: string | null;
   readonly name: string;
   readonly version: string;
   readonly channel: SuiteReleaseChannel;
   readonly update: CatalogState;
-  readonly executable: string;
+  readonly executable: string | null;
   readonly fileExtensions: readonly string[];
   readonly lastOpenedAt: number | null;
+  /** How many documents the index found in this app's folder. */
+  readonly fileCount: number;
+  readonly health: AppHealth;
 }
 
 /** One file the index found, with the app that claims it. */
@@ -80,7 +87,6 @@ export interface StartSettings {
 export interface LauncherState {
   readonly apps: readonly AppCard[];
   readonly recents: readonly RecentCard[];
-  readonly refused: readonly RefusedInstall[];
   readonly files: readonly FileCard[];
   readonly settings: StartSettings;
   readonly catalog: CatalogSummary;
