@@ -27,6 +27,16 @@ export interface InstallRecord {
   readonly id: string;
   /** Absolute path to the executable. Validated before it is ever spawned. */
   readonly executable: string;
+  /**
+   * The manifest this install ships.
+   *
+   * A packaged app carries `suite.app.json` beside its own executable, so the
+   * record that already knows where the executable is knows where its manifest
+   * is too. When it is absent the caller falls back to the roots, which is how a
+   * system-wide install directory is discovered without an installer writing a
+   * record for it.
+   */
+  readonly manifestPath?: string;
   readonly installedAt?: string;
 }
 
@@ -113,6 +123,12 @@ export async function discoverApps(options: DiscoverOptions): Promise<DiscoveryR
   const rejected: RejectedInstall[] = [];
   const seen = new Set<string>();
 
+  // A record that names its own manifest is read first: it is the app the user
+  // just added, and it does not depend on a directory layout.
+  const fromRecords = options.records.flatMap((record): string[] =>
+    record.manifestPath === undefined ? [] : [record.manifestPath],
+  );
+  const fromRoots: string[] = [];
   for (const root of options.roots) {
     let children: readonly string[];
     try {
@@ -121,49 +137,52 @@ export async function discoverApps(options: DiscoverOptions): Promise<DiscoveryR
       // A root that does not exist yet is normal on a fresh machine.
       continue;
     }
-
     for (const child of children) {
-      const manifestPath = joinPath(joinPath(root, child), APP_MANIFEST_FILENAME);
-      const found = await readManifest(options.fileSystem, manifestPath);
-
-      if (isRejection(found)) {
-        if (found.reason !== "no manifest") rejected.push(found);
-        continue;
-      }
-
-      if (!manifestFitsHub(found, options.hubContract)) {
-        rejected.push({
-          path: manifestPath,
-          reason: `needs contract ${found.contractVersion}, which is newer than this launcher`,
-        });
-        continue;
-      }
-      if (seen.has(found.id)) {
-        rejected.push({ path: manifestPath, reason: `duplicate install of ${found.id}` });
-        continue;
-      }
-
-      const record = recordFor(options.records, found.id);
-      if (!record) {
-        rejected.push({ path: manifestPath, reason: `no install record for ${found.id}` });
-        continue;
-      }
-      if (!ABSOLUTE_PATH.test(record.executable)) {
-        rejected.push({
-          path: manifestPath,
-          reason: "the install record names a relative executable",
-        });
-        continue;
-      }
-
-      seen.add(found.id);
-      apps.push({
-        manifest: found,
-        manifestPath,
-        executable: record.executable,
-        installedAt: record.installedAt ?? null,
-      });
+      fromRoots.push(joinPath(joinPath(root, child), APP_MANIFEST_FILENAME));
     }
+  }
+
+  const candidates = [...fromRecords, ...fromRoots];
+  for (const manifestPath of candidates) {
+    const found = await readManifest(options.fileSystem, manifestPath);
+
+    if (isRejection(found)) {
+      if (found.reason !== "no manifest") rejected.push(found);
+      continue;
+    }
+
+    if (!manifestFitsHub(found, options.hubContract)) {
+      rejected.push({
+        path: manifestPath,
+        reason: `needs contract ${found.contractVersion}, which is newer than this launcher`,
+      });
+      continue;
+    }
+    if (seen.has(found.id)) {
+      rejected.push({ path: manifestPath, reason: `duplicate install of ${found.id}` });
+      continue;
+    }
+
+    const record = recordFor(options.records, found.id);
+    if (!record) {
+      rejected.push({ path: manifestPath, reason: `no install record for ${found.id}` });
+      continue;
+    }
+    if (!ABSOLUTE_PATH.test(record.executable)) {
+      rejected.push({
+        path: manifestPath,
+        reason: "the install record names a relative executable",
+      });
+      continue;
+    }
+
+    seen.add(found.id);
+    apps.push({
+      manifest: found,
+      manifestPath,
+      executable: record.executable,
+      installedAt: record.installedAt ?? null,
+    });
   }
 
   return { apps, rejected };

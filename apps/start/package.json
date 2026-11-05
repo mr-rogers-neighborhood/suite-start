@@ -5,11 +5,11 @@
   "description": "The Suite launcher: discovers installed apps from signed manifests, routes suite:// links and files, and starts the right process. It never holds a document.",
   "type": "module",
   "bin": {
-    "suite-start": "./dist/cli.js"
+    "suite-start-cli": "./dist/cli.js"
   },
   "scripts": {
-    "build": "tsc -p tsconfig.build.json",
-    "start": "node dist/cli.js",
+    "build": "tsc -p tsconfig.build.json && node scripts/stage.mjs",
+    "start": "electron .",
     "typecheck": "tsc --noEmit -p tsconfig.json"
   },
   "dependencies": {
@@ -18,11 +18,14 @@
   "devDependencies": {
     "@types/node": "^26.6.5",
     "typescript": "~5.9.3",
-    "vitest": "^5.0.5"
+    "vitest": "^5.0.5",
+    "electron": "^45.2.2",
+    "electron-builder": "^26.0.12"
   },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/mr-rogers-neighborhood/suite-start.git",
     "directory": "apps/start"
-  }
+  },
+  "main": "./dist/main.js"
 }

@@ -23,6 +23,16 @@ export interface InstallRecord {
     readonly id: string;
     /** Absolute path to the executable. Validated before it is ever spawned. */
     readonly executable: string;
+    /**
+     * The manifest this install ships.
+     *
+     * A packaged app carries `suite.app.json` beside its own executable, so the
+     * record that already knows where the executable is knows where its manifest
+     * is too. When it is absent the caller falls back to the roots, which is how a
+     * system-wide install directory is discovered without an installer writing a
+     * record for it.
+     */
+    readonly manifestPath?: string;
     readonly installedAt?: string;
 }
 export interface RegistryFileSystem {

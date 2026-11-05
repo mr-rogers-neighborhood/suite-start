@@ -68,3 +68,26 @@ than the OAuth token `gh auth` issues.
 1. `pnpm check` — green, including the `dist` drift check.
 2. `git tag vX.Y.Z && git push origin main --tags`.
 3. Update the two specifiers in the consuming repository.
+
+## The launcher
+
+`apps/start` is an Electron window: app cards, recent files, and the `suite://` handler. It is a
+launcher, so it starts a process and gets out of the way — it does not embed an app's UI, proxy its
+documents, or run its code.
+
+Discovery joins two records. The **manifest** (`suite.app.json`) is what an app ships beside its own
+executable and says what it is; the **install record** (`installs.json`, in the data directory) is the
+only place an executable path lives. A manifest may not name a binary, so a tampered one cannot redirect
+a launch.
+
+**Add app…** runs a file picker in the main process, reads the manifest beside the chosen executable and
+writes the record. That stands in for an installer this phase does not build, and it uses the same
+handoff a packaged install has.
+
+```sh
+pnpm build && pnpm --filter @suite/start start   # the launcher
+pnpm e2e                                         # its own gate; needs a display or xvfb-run
+```
+
+`pnpm e2e` is serial and launches the real application, because what it does with a handoff from the
+operating system cannot be checked any other way.

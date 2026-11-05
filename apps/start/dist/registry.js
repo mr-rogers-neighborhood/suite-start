@@ -61,6 +61,10 @@ export async function discoverApps(options) {
     const apps = [];
     const rejected = [];
     const seen = new Set();
+    // A record that names its own manifest is read first: it is the app the user
+    // just added, and it does not depend on a directory layout.
+    const fromRecords = options.records.flatMap((record) => record.manifestPath === undefined ? [] : [record.manifestPath]);
+    const fromRoots = [];
     for (const root of options.roots) {
         let children;
         try {
@@ -71,44 +75,47 @@ export async function discoverApps(options) {
             continue;
         }
         for (const child of children) {
-            const manifestPath = joinPath(joinPath(root, child), APP_MANIFEST_FILENAME);
-            const found = await readManifest(options.fileSystem, manifestPath);
-            if (isRejection(found)) {
-                if (found.reason !== "no manifest")
-                    rejected.push(found);
-                continue;
-            }
-            if (!manifestFitsHub(found, options.hubContract)) {
-                rejected.push({
-                    path: manifestPath,
-                    reason: `needs contract ${found.contractVersion}, which is newer than this launcher`,
-                });
-                continue;
-            }
-            if (seen.has(found.id)) {
-                rejected.push({ path: manifestPath, reason: `duplicate install of ${found.id}` });
-                continue;
-            }
-            const record = recordFor(options.records, found.id);
-            if (!record) {
-                rejected.push({ path: manifestPath, reason: `no install record for ${found.id}` });
-                continue;
-            }
-            if (!ABSOLUTE_PATH.test(record.executable)) {
-                rejected.push({
-                    path: manifestPath,
-                    reason: "the install record names a relative executable",
-                });
-                continue;
-            }
-            seen.add(found.id);
-            apps.push({
-                manifest: found,
-                manifestPath,
-                executable: record.executable,
-                installedAt: record.installedAt ?? null,
-            });
+            fromRoots.push(joinPath(joinPath(root, child), APP_MANIFEST_FILENAME));
         }
+    }
+    const candidates = [...fromRecords, ...fromRoots];
+    for (const manifestPath of candidates) {
+        const found = await readManifest(options.fileSystem, manifestPath);
+        if (isRejection(found)) {
+            if (found.reason !== "no manifest")
+                rejected.push(found);
+            continue;
+        }
+        if (!manifestFitsHub(found, options.hubContract)) {
+            rejected.push({
+                path: manifestPath,
+                reason: `needs contract ${found.contractVersion}, which is newer than this launcher`,
+            });
+            continue;
+        }
+        if (seen.has(found.id)) {
+            rejected.push({ path: manifestPath, reason: `duplicate install of ${found.id}` });
+            continue;
+        }
+        const record = recordFor(options.records, found.id);
+        if (!record) {
+            rejected.push({ path: manifestPath, reason: `no install record for ${found.id}` });
+            continue;
+        }
+        if (!ABSOLUTE_PATH.test(record.executable)) {
+            rejected.push({
+                path: manifestPath,
+                reason: "the install record names a relative executable",
+            });
+            continue;
+        }
+        seen.add(found.id);
+        apps.push({
+            manifest: found,
+            manifestPath,
+            executable: record.executable,
+            installedAt: record.installedAt ?? null,
+        });
     }
     return { apps, rejected };
 }

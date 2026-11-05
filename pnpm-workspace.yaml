@@ -6,3 +6,10 @@ packages:
 # dependency, so cross-package deps carry a plain version. This keeps the local
 # workspace linking rather than trying to fetch `@suite/files` from npm.
 linkWorkspacePackages: true
+
+allowBuilds:
+  # Electron's postinstall downloads the runtime the launcher needs.
+  electron: true
+  # Reached only by electron-builder's Windows target, which this repository does
+  # not build. Denied explicitly so the install does not ask again.
+  electron-winstaller: false

@@ -150,3 +150,40 @@ describe("lookups", () => {
     expect(appById(apps, "budget")).toBeNull();
   });
 });
+
+describe("a record that names its own manifest", () => {
+  it("is discovered without a root, because a packaged app ships it beside itself", async () => {
+    const files = { "/opt/suite-canvas/suite.app.json": manifest() };
+    const result = await discoverApps({
+      roots: [],
+      records: [
+        {
+          id: "canvas",
+          executable: "/opt/suite-canvas/suite-canvas",
+          manifestPath: "/opt/suite-canvas/suite.app.json",
+        },
+      ],
+      fileSystem: fakeFileSystem(files),
+    });
+    expect(result.rejected).toEqual([]);
+    expect(result.apps).toHaveLength(1);
+    expect(result.apps[0]?.executable).toBe("/opt/suite-canvas/suite-canvas");
+  });
+
+  it("is still checked against the install record it claims", async () => {
+    const files = { "/opt/suite-canvas/suite.app.json": manifest() };
+    const result = await discoverApps({
+      roots: [],
+      records: [
+        {
+          id: "canvas",
+          executable: "relative/path",
+          manifestPath: "/opt/suite-canvas/suite.app.json",
+        },
+      ],
+      fileSystem: fakeFileSystem(files),
+    });
+    expect(result.apps).toEqual([]);
+    expect(result.rejected[0]?.reason).toContain("relative executable");
+  });
+});

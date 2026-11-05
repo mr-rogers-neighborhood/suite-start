@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <title>Suite Start</title>
+    <link rel="stylesheet" href="launcher.css" />
+  </head>
+  <body>
+    <header class="head">
+      <h1>Suite</h1>
+      <div class="head-actions">
+        <button id="add" type="button" class="button">Add app…</button>
+      </div>
+    </header>
+
+    <main>
+      <section aria-labelledby="apps-heading">
+        <h2 id="apps-heading">Apps</h2>
+        <ul id="apps" class="cards"></ul>
+        <p id="apps-empty" class="empty" hidden>
+          Nothing installed yet. Use <strong>Add app…</strong> to pick an application's executable.
+        </p>
+      </section>
+
+      <section aria-labelledby="recents-heading" id="recents-section" hidden>
+        <h2 id="recents-heading">Recent files</h2>
+        <ul id="recents" class="rows"></ul>
+      </section>
+
+      <section aria-labelledby="refused-heading" id="refused-section" hidden>
+        <h2 id="refused-heading">Needs attention</h2>
+        <ul id="refused" class="rows"></ul>
+      </section>
+    </main>
+
+    <footer class="foot">
+      <span id="version"></span>
+      <span class="foot-note">Suite Start launches apps. It never opens or edits your documents.</span>
+    </footer>
+
+    <script src="launcher.js"></script>
+  </body>
+</html>

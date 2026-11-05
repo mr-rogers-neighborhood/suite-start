@@ -16,11 +16,13 @@
     "test": "vitest run",
     "typecheck": "pnpm -r --workspace-concurrency=1 run typecheck",
     "verify": "pnpm check",
-    "build:verify": "pnpm -r run build && git diff --exit-code -- packages"
+    "build:verify": "pnpm -r run build && git diff --exit-code -- packages",
+    "e2e": "playwright test"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.5.15",
     "typescript": "~5.9.3",
-    "vitest": "^5.0.5"
+    "vitest": "^5.0.5",
+    "@playwright/test": "^1.64.1"
   }
 }
