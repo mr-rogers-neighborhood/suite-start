@@ -1,3 +1,5 @@
+import type { CatalogState, SuiteReleaseChannel } from "@suite/contracts";
+
 /**
  * What the hub window asks the main process for.
  *
@@ -27,9 +29,18 @@ export interface AppCard {
   readonly id: string;
   readonly name: string;
   readonly version: string;
+  readonly channel: SuiteReleaseChannel;
+  readonly update: CatalogState;
   readonly executable: string;
   readonly fileExtensions: readonly string[];
   readonly lastOpenedAt: number | null;
+}
+
+/** What the catalog said, in the words the Settings pane uses. */
+export interface CatalogSummary {
+  readonly state: "none" | "configured" | "refused";
+  readonly path: string | null;
+  readonly reason: string | null;
 }
 
 /** One recent file. */
@@ -58,5 +69,6 @@ export interface LauncherState {
   readonly recents: readonly RecentCard[];
   readonly refused: readonly RefusedInstall[];
   readonly settings: StartSettings;
+  readonly catalog: CatalogSummary;
   readonly version: string;
 }

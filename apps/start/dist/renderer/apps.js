@@ -1,5 +1,12 @@
 import { el, relativeTime } from "./format.js";
 
+/** What the catalog said, in three words a card can carry. */
+const UPDATE_LABELS = {
+  "update-available": "Update available",
+  "up-to-date": "Up to date",
+  unknown: "Update state unknown",
+};
+
 /**
  * The Apps pane.
  *
@@ -28,6 +35,14 @@ export function renderApps(state, actions) {
         `Opens ${app.fileExtensions.join(", ") || "no files"} · ${relativeTime(app.lastOpenedAt)}`,
       ),
     );
+
+    const update = el(
+      "p",
+      "card-meta card-update",
+      `${app.channel} · ${UPDATE_LABELS[app.update] ?? UPDATE_LABELS.unknown}`,
+    );
+    update.dataset.state = app.update;
+    card.append(update);
 
     const buttons = el("div", "card-actions");
     const open = el("button", "button primary", "Open");

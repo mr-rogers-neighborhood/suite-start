@@ -194,6 +194,10 @@ h3 {
   margin: 0;
 }
 
+.card-update[data-state="update-available"] {
+  color: var(--accent);
+}
+
 .card-actions {
   display: flex;
   gap: 8px;

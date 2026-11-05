@@ -12,9 +12,10 @@ import {
 /**
  * The launcher's harness.
  *
- * Start reads two files it owns: `installs.json` and `recents.json`, both in the
- * data directory. A spec writes them and then starts the real application, which
- * is the only way to see what it does with a handoff from the operating system.
+ * Start reads files it owns, `installs.json` and `recents.json` in the data
+ * directory, and a release catalog the environment points at. A spec writes them
+ * and then starts the real application, which is the only way to see what it
+ * does with a handoff from the operating system.
  */
 
 export const START_DIR = resolve(fileURLToPath(import.meta.url), "..", "..", "apps", "start");
@@ -80,13 +81,18 @@ export interface Launched {
   close(): Promise<void>;
 }
 
-export async function launch(box: Sandbox, args: readonly string[] = []): Promise<Launched> {
+export async function launch(
+  box: Sandbox,
+  args: readonly string[] = [],
+  env: Readonly<Record<string, string>> = {},
+): Promise<Launched> {
   const app = await electron.launch({
     args: [START_DIR, ...args],
     env: {
       ...process.env,
       SUITE_START_DATA: box.data,
       SUITE_START_VERSION: "0.1.0-e2e",
+      ...env,
     },
     timeout: 45_000,
   });

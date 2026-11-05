@@ -35,6 +35,12 @@
       "development": "./src/contractVersion.ts",
       "import": "./dist/contractVersion.js",
       "default": "./dist/contractVersion.js"
+    },
+    "./release": {
+      "types": "./dist/release.d.ts",
+      "development": "./src/release.ts",
+      "import": "./dist/release.js",
+      "default": "./dist/release.js"
     }
   },
   "files": [

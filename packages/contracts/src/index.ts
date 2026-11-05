@@ -61,3 +61,17 @@ export {
   type SuitePlatform,
   suitePaths,
 } from "./paths.js";
+export {
+  type CatalogState,
+  catalogState,
+  findReleaseEntry,
+  parseReleaseCatalog,
+  SUITE_RELEASE_CATALOG_FORMAT,
+  SUITE_RELEASE_CATALOG_FORMAT_VERSION,
+  type SuiteReleaseArtifact,
+  type SuiteReleaseCatalog,
+  type SuiteReleaseEntry,
+  suiteReleaseArtifactSchema,
+  suiteReleaseCatalogSchema,
+  suiteReleaseEntrySchema,
+} from "./release.js";

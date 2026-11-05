@@ -1,8 +1,9 @@
 import { spawn } from "node:child_process";
 import { dirname, join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
-import { parseDeepLink } from "@suite/contracts";
+import { catalogState, findReleaseEntry, parseDeepLink } from "@suite/contracts";
 import { app, BrowserWindow, dialog, ipcMain, Menu, net, protocol, shell } from "electron";
+import { type CatalogRead, catalogPathFromEnv, readCatalog } from "./catalog.js";
 import { type RegistryStore, registryStore } from "./installs.js";
 import { defaultRoots, nodeRegistryFileSystem } from "./nodeFileSystem.js";
 import { RECENT_LIMIT, type RecentsFile, recentsFile } from "./recents.js";
@@ -10,6 +11,7 @@ import { appById, type DiscoveredApp, discoverApps, type InstallRecord } from ".
 import { describeRouteRejection, routeLaunch } from "./route.js";
 import {
   type AppCard,
+  type CatalogSummary,
   type LauncherState,
   type RecentCard,
   START_CHANGED,
@@ -78,18 +80,34 @@ async function discover(): Promise<{
   return { apps: result.apps, refused: result.rejected };
 }
 
+function catalogSummary(read: CatalogRead): CatalogSummary {
+  if (read.state === "configured") return { state: "configured", path: read.path, reason: null };
+  if (read.state === "refused") return { state: "refused", path: read.path, reason: read.reason };
+  return { state: "none", path: null, reason: null };
+}
+
 async function state(): Promise<LauncherState> {
   const { apps, refused } = await discover();
   const recent = await recents.list();
+  const catalogRead = await readCatalog(catalogPathFromEnv(), nodeRegistryFileSystem());
 
-  const cards: AppCard[] = apps.map((entry) => ({
-    id: entry.manifest.id,
-    name: entry.manifest.name,
-    version: entry.manifest.version,
-    executable: entry.executable,
-    fileExtensions: entry.manifest.fileExtensions,
-    lastOpenedAt: recent.find((row) => row.appId === entry.manifest.id)?.openedAt ?? null,
-  }));
+  const cards: AppCard[] = apps.map((entry) => {
+    const channel = entry.manifest.update?.channel ?? "stable";
+    const release =
+      catalogRead.state === "configured"
+        ? findReleaseEntry(catalogRead.catalog, entry.manifest.id, channel)
+        : null;
+    return {
+      id: entry.manifest.id,
+      name: entry.manifest.name,
+      version: entry.manifest.version,
+      channel,
+      update: catalogState(release, entry.manifest.version),
+      executable: entry.executable,
+      fileExtensions: entry.manifest.fileExtensions,
+      lastOpenedAt: recent.find((row) => row.appId === entry.manifest.id)?.openedAt ?? null,
+    };
+  });
 
   const recentCards: RecentCard[] = recent
     .flatMap((row): RecentCard[] => {
@@ -112,6 +130,7 @@ async function state(): Promise<LauncherState> {
     recents: recentCards,
     refused,
     settings: { dataDirectory, installRoots: roots() },
+    catalog: catalogSummary(catalogRead),
     version: app.getVersion(),
   };
 }

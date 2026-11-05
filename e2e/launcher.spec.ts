@@ -193,3 +193,70 @@ test("renders every section with nothing installed", async () => {
     await run.close();
   }
 });
+
+test("marks an app with an update from a catalog file", async () => {
+  const app = await fakeApp(box);
+  await install(box, { id: "canvas", executable: app.executable, manifestPath: app.manifestPath });
+
+  const catalogPath = join(box.root, "catalog.json");
+  await writeFile(
+    catalogPath,
+    JSON.stringify({
+      format: "suite.release.catalog",
+      formatVersion: 1,
+      generatedAt: "2026-11-05T09:00:00.000Z",
+      signature: "unsigned-in-this-build",
+      entries: [{ app: "canvas", version: "0.2.0" }],
+    }),
+  );
+
+  const run = await launch(box, [], { SUITE_START_CATALOG: catalogPath });
+  try {
+    await expect(run.page.locator(".card-update")).toHaveText("stable · Update available");
+
+    await run.page.getByRole("tab", { name: "Settings" }).click();
+    await expect(run.page.locator("#settings dd").nth(1)).toHaveText(
+      `Read from ${catalogPath}. Never fetched.`,
+    );
+  } finally {
+    await run.close();
+  }
+});
+
+test("refuses a malformed catalog by field name", async () => {
+  const app = await fakeApp(box);
+  await install(box, { id: "canvas", executable: app.executable, manifestPath: app.manifestPath });
+
+  const catalogPath = join(box.root, "catalog.json");
+  await writeFile(
+    catalogPath,
+    JSON.stringify({ format: "suite.release.catalog", signature: "", entries: [] }),
+  );
+
+  const run = await launch(box, [], { SUITE_START_CATALOG: catalogPath });
+  try {
+    // The card cannot claim a state from a catalog it refused, and Settings says
+    // which field was wrong rather than "invalid catalog".
+    await expect(run.page.locator(".card-update")).toHaveText("stable · Update state unknown");
+    await run.page.getByRole("tab", { name: "Settings" }).click();
+    await expect(run.page.locator("#settings dd").nth(1)).toContainText("formatVersion");
+  } finally {
+    await run.close();
+  }
+});
+
+test("says the update state is unknown when no catalog is configured", async () => {
+  const app = await fakeApp(box);
+  await install(box, { id: "canvas", executable: app.executable, manifestPath: app.manifestPath });
+
+  const run = await launch(box);
+  try {
+    await expect(run.page.locator(".card-update")).toHaveText("stable · Update state unknown");
+    await run.page.getByRole("tab", { name: "Settings" }).click();
+    await expect(run.page.locator("#settings dd").nth(1)).toHaveText(
+      "No catalog configured, so update states are unknown.",
+    );
+  } finally {
+    await run.close();
+  }
+});
