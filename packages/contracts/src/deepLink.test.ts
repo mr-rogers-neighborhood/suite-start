@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { deepLinkPrefix, formatDeepLink, parseDeepLink } from "./deepLink.js";
+import {
+  deepLinkPrefix,
+  formatDeepLink,
+  parseDeepLink,
+  WORKSPACE_SEGMENT,
+  workspaceLink,
+} from "./deepLink.js";
 
 function parsed(value: string, apps?: readonly string[]) {
   const result = parseDeepLink(value, apps ? { apps } : {});
@@ -125,5 +131,26 @@ describe("formatDeepLink", () => {
 describe("deepLinkPrefix", () => {
   it("is the app's own scheme", () => {
     expect(deepLinkPrefix("budget")).toBe("suite://budget/");
+  });
+});
+
+describe("workspaceLink", () => {
+  it("names the workspace in a shape every app shares", () => {
+    expect(workspaceLink("canvas", "ws_1")).toBe("suite://canvas/workspace/ws_1");
+    expect(workspaceLink("planner", "ws_2")).toBe("suite://planner/workspace/ws_2");
+  });
+
+  it("round-trips through the parser", () => {
+    const link = workspaceLink("canvas", "ws_1");
+    if (link === null) throw new Error("expected a link");
+    const parsed = parseDeepLink(link, { apps: ["canvas"] });
+    expect(parsed.ok).toBe(true);
+    if (!parsed.ok) return;
+    expect(parsed.value.segments).toEqual([WORKSPACE_SEGMENT, "ws_1"]);
+  });
+
+  it("refuses an id that would not survive parsing", () => {
+    expect(workspaceLink("canvas", "..")).toBeNull();
+    expect(workspaceLink("canvas", "a/b")).toBeNull();
   });
 });

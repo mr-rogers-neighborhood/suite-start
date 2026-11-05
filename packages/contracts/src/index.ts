@@ -31,6 +31,8 @@ export {
   parseDeepLink,
   SUITE_PROTOCOL,
   type SuiteDeepLink,
+  WORKSPACE_SEGMENT,
+  workspaceLink,
 } from "./deepLink.js";
 export {
   deploymentAllows,
@@ -51,3 +53,11 @@ export {
   describeIssues,
   parseWith,
 } from "./parse.js";
+export {
+  joinPath,
+  type SuiteAppName,
+  type SuitePathOptions,
+  type SuitePaths,
+  type SuitePlatform,
+  suitePaths,
+} from "./paths.js";

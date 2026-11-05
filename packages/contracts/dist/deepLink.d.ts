@@ -49,6 +49,18 @@ export interface ParseDeepLinkOptions {
  * climbs should be refused, not quietly reinterpreted.
  */
 export declare function parseDeepLink(value: string, options?: ParseDeepLinkOptions): DeepLinkParse;
+/**
+ * The segment that names a workspace, for every app.
+ *
+ * Naming it here is what lets a link have one shape across the suite instead of
+ * each app inventing its own: `suite://canvas/workspace/<id>`,
+ * `suite://planner/workspace/<id>`. A link is a deep link, never a foreign key,
+ * so an app that is missing is a prompt to install rather than a broken
+ * reference.
+ */
+export declare const WORKSPACE_SEGMENT = "workspace";
+/** The link that opens one workspace in an app. */
+export declare function workspaceLink(app: string, workspaceId: string): string | null;
 /** The prefix an app's links share: `suite://canvas/`. */
 export declare function deepLinkPrefix(app: string): string;
 /**

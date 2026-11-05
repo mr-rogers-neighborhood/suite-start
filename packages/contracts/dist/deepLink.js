@@ -108,6 +108,20 @@ export function parseDeepLink(value, options = {}) {
         return { ok: false, reason: "too-many-segments" };
     return { ok: true, value: { app, segments, query } };
 }
+/**
+ * The segment that names a workspace, for every app.
+ *
+ * Naming it here is what lets a link have one shape across the suite instead of
+ * each app inventing its own: `suite://canvas/workspace/<id>`,
+ * `suite://planner/workspace/<id>`. A link is a deep link, never a foreign key,
+ * so an app that is missing is a prompt to install rather than a broken
+ * reference.
+ */
+export const WORKSPACE_SEGMENT = "workspace";
+/** The link that opens one workspace in an app. */
+export function workspaceLink(app, workspaceId) {
+    return formatDeepLink(app, [WORKSPACE_SEGMENT, workspaceId]);
+}
 /** The prefix an app's links share: `suite://canvas/`. */
 export function deepLinkPrefix(app) {
     return `${SUITE_PROTOCOL}${app}/`;
