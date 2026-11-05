@@ -41,6 +41,10 @@ import {
  * a desktop entry, a shell or another process inherits whatever directory that
  * process had, and the bundle is not there.
  */
+// Before anything reads a path. `userData` is derived from the application name,
+// and without this it is the scoped package name, `@suite/start`.
+app.setName("Suite Start");
+
 function appDir(): string {
   return app.getAppPath();
 }

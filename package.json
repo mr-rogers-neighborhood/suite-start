@@ -17,7 +17,8 @@
     "typecheck": "pnpm -r --workspace-concurrency=1 run typecheck",
     "verify": "pnpm check",
     "build:verify": "pnpm -r run build && git diff --exit-code -- packages",
-    "e2e": "playwright test"
+    "e2e": "playwright test",
+    "dev": "pnpm build && pnpm --filter @suite/start start"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.5.15",
