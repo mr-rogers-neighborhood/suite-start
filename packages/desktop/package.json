@@ -1,6 +1,6 @@
 {
   "name": "@suite/desktop",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "The Electron policy every Suite app shares: a custom protocol resolver, a strict page policy and an IPC sender check. Pure functions; no Electron import, so a test needs no window.",
   "type": "module",
   "main": "./dist/index.js",
