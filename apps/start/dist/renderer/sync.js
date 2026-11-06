@@ -1,11 +1,15 @@
 import { el } from "./format.js";
 
 /**
- * The Sync pane: what this machine is holding, and who may write to it.
+ * The Sync pane: what this machine is holding, and who is connected to it.
  *
- * There is no document here to show, and that is the design rather than a limitation. The
- * host stores encrypted frames, so what it can honestly report is how many, for which
- * workspace, and which devices hold a role.
+ * There is no document here to show, and that is the design rather than a limitation. What
+ * a person can act on is: is it running, can other devices reach it, which workspaces does
+ * it carry, and which devices are in them.
+ *
+ * The words are deliberately plain. "Frames", "epochs" and "keys" are how this works; none
+ * of them is anything a person is being asked to do, and a pane that explains the machinery
+ * instead of the state makes the state harder to find.
  */
 
 const ROLE_WORDS = {
@@ -28,8 +32,8 @@ export function renderSync(state, actions) {
       "p",
       "pane-note",
       sync.running
-        ? "This machine is the host. Devices reach it, and it hands out what they have not seen."
-        : "The host is stopped. Nothing can reach this machine.",
+        ? "Other devices can reach this machine and pick up changes."
+        : "Sync is off. Nothing can reach this machine.",
     ),
   );
   panel.append(head);
@@ -41,7 +45,7 @@ export function renderSync(state, actions) {
     el(
       "p",
       "pane-note",
-      "The host stores encrypted frames and the records that say who may write. It cannot read a document, merge two, or answer a question about one.",
+      "Documents stay encrypted on their way through this machine. It carries them; it cannot read them.",
     ),
   );
 }
@@ -51,7 +55,7 @@ function addressBlock(sync, actions) {
   const value = el("code", null, sync.address ?? "not listening");
   value.id = "sync-address";
 
-  const toggle = el("button", "button", sync.running ? "Stop the host" : "Start the host");
+  const toggle = el("button", "button", sync.running ? "Turn sync off" : "Turn sync on");
   toggle.type = "button";
   toggle.id = "sync-toggle";
   toggle.addEventListener("click", async () => {
@@ -59,7 +63,7 @@ function addressBlock(sync, actions) {
     await (sync.running ? actions.stopSync() : actions.startSync());
   });
 
-  block.append(el("h3", null, "Address"), value, toggle);
+  block.append(el("h3", null, "This machine\u2019s address"), value, toggle);
   return block;
 }
 
@@ -96,7 +100,7 @@ function workspaceBlock(sync) {
   block.append(el("h3", null, "Workspaces"));
 
   if (!sync.running) {
-    block.append(el("p", "pane-note", "Start the host to see what it holds."));
+    block.append(el("p", "pane-note", "Turn sync on to see what this machine is carrying."));
     return block;
   }
   if (sync.workspaces.length === 0) {
@@ -118,16 +122,16 @@ function workspaceBlock(sync) {
       el(
         "p",
         "pane-note",
-        `${workspace.frames} frame${workspace.frames === 1 ? "" : "s"} · epoch ${
-          workspace.newestEpoch ?? "none"
-        }`,
+        workspace.frames === 0
+          ? "Nothing has changed here yet."
+          : `${workspace.frames} ${workspace.frames === 1 ? "change" : "changes"} passed through.`,
       ),
     );
 
     const members = el("ul", "sync-members");
     for (const member of workspace.members) {
       members.append(
-        el("li", null, `${shortId(member.deviceId)} — ${ROLE_WORDS[String(member.role)]}`),
+        el("li", null, `${shortId(member.deviceId)} · ${ROLE_WORDS[String(member.role)]}`),
       );
     }
     if (workspace.members.length === 0) members.append(el("li", null, "no devices yet"));
