@@ -35,3 +35,11 @@ linux:
   category: Utility
   synopsis: The Suite hub
   description: Discovers installed Suite apps, opens their documents and routes suite:// links.
+
+# The hub is the one process that owns `suite://`. Every app is reached through
+# it, so the scheme is declared here rather than on three app packages that
+# would each claim it.
+protocols:
+  - name: Suite
+    schemes:
+      - suite

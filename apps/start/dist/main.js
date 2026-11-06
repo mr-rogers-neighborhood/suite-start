@@ -1,7 +1,8 @@
 import { spawn } from "node:child_process";
-import { dirname, join, resolve } from "node:path";
+import { dirname, join } from "node:path";
 import { pathToFileURL } from "node:url";
 import { appDocumentsFolder, parseDeepLink, SUITE_APPS, suiteDocumentsRoot, } from "@suite/contracts";
+import { desktopCsp, isTrustedSender, resolveProtocolAsset } from "@suite/desktop";
 import { app, BrowserWindow, dialog, ipcMain, Menu, net, protocol, shell } from "electron";
 import { appCards } from "./cards.js";
 import { catalogPathFromEnv, readCatalog } from "./catalog.js";
@@ -46,16 +47,13 @@ protocol.registerSchemesAsPrivileged([
         privileges: { standard: true, secure: true, supportFetchAPI: true, corsEnabled: true },
     },
 ]);
-const CSP = [
-    "default-src 'none'",
-    "script-src 'self'",
-    "style-src 'self'",
-    "img-src 'self' data:",
-    "form-action 'none'",
-    "base-uri 'none'",
-    "object-src 'none'",
-    "frame-ancestors 'none'",
-].join("; ");
+/**
+ * The hub never runs WebAssembly, so it does not need the directive the apps
+ * need. The rest of the policy is the one every Suite page ships.
+ */
+const CSP = desktopCsp({ wasm: false });
+/** The only origin the hub's renderer is loaded from. */
+const PAGE_ORIGIN = "start://launcher";
 let window = null;
 let registry;
 let recents;
@@ -238,9 +236,22 @@ async function show() {
     await window.loadURL("start://launcher/index.html");
     await broadcast();
 }
+/**
+ * Register a channel, but only answer the page this app loaded.
+ *
+ * A sandboxed renderer with a strict policy is already a narrow door; this is
+ * the check Electron's checklist asks for, and it costs one comparison.
+ */
+function onIpc(channel, handler) {
+    ipcMain.handle(channel, (event, ...args) => {
+        if (!isTrustedSender(event.senderFrame?.url, [PAGE_ORIGIN]))
+            return undefined;
+        return handler(event, ...args);
+    });
+}
 function registerIpc() {
-    ipcMain.handle(START_IPC.listApps, () => state());
-    ipcMain.handle(START_IPC.launch, async (_event, id) => {
+    onIpc(START_IPC.listApps, () => state());
+    onIpc(START_IPC.launch, async (_event, id) => {
         if (typeof id !== "string")
             return;
         const { apps } = await discover();
@@ -250,15 +261,15 @@ function registerIpc() {
         spawnApp(target, []);
         await broadcast();
     });
-    ipcMain.handle(START_IPC.addApp, () => addApp());
-    ipcMain.handle(START_IPC.removeApp, async (_event, id) => {
+    onIpc(START_IPC.addApp, () => addApp());
+    onIpc(START_IPC.removeApp, async (_event, id) => {
         if (typeof id !== "string")
             return;
         await registry.remove(id);
         await broadcast();
     });
-    ipcMain.handle(START_IPC.recents, async () => (await state()).recents);
-    ipcMain.handle(START_IPC.forgetRecent, async (_event, path) => {
+    onIpc(START_IPC.recents, async () => (await state()).recents);
+    onIpc(START_IPC.forgetRecent, async (_event, path) => {
         if (typeof path !== "string")
             return;
         await recents.forget(path);
@@ -266,7 +277,7 @@ function registerIpc() {
     });
     // The one channel that takes a path, and it takes it only to hand back
     // something the index already listed: containment is checked in main.
-    ipcMain.handle(START_IPC.openFile, async (_event, path) => {
+    onIpc(START_IPC.openFile, async (_event, path) => {
         if (typeof path !== "string")
             return;
         const folders = documentFolders().map((folder) => folder.path);
@@ -274,7 +285,7 @@ function registerIpc() {
             return;
         await open(path);
     });
-    ipcMain.handle(START_IPC.info, () => ({
+    onIpc(START_IPC.info, () => ({
         host: "start",
         version: app.getVersion(),
         platform: process.platform,
@@ -339,15 +350,29 @@ else {
         registry = registryStore(dataDirectory);
         recents = recentsFile(dataDirectory);
         app.setAppUserModelId("run.suite.start");
-        protocol.handle("start", async (request) => {
-            const relative = new URL(request.url).pathname.replace(/^\/+/u, "") || "index.html";
-            const root = join(appDir(), "dist", "renderer");
-            const file = resolve(join(root, relative));
-            if (file !== root && !file.startsWith(`${root}/`)) {
-                return new Response("not found", { status: 404 });
+        // The hub owns `suite://`; every other app is reached through it. An
+        // installed package declares the scheme in its desktop entry, an AppImage
+        // does not, so ask the platform once when packaged.
+        if (app.isPackaged) {
+            try {
+                app.setAsDefaultProtocolClient("suite");
             }
+            catch {
+                // No desktop integration available; the file manager path still works.
+            }
+        }
+        protocol.handle("start", async (request) => {
+            const root = join(appDir(), "dist", "renderer");
+            // The shared resolver reads the raw URL and refuses a climb before the
+            // URL parser can normalise it away.
+            const resolved = resolveProtocolAsset(request.url, root, {
+                scheme: "start",
+                hosts: ["launcher"],
+            });
+            if (!resolved.ok)
+                return new Response("not found", { status: 404 });
             // `net.fetch`, not the global: only this one can read a file URL.
-            const response = await net.fetch(pathToFileURL(file).toString());
+            const response = await net.fetch(pathToFileURL(resolved.file).toString());
             const headers = new Headers(response.headers);
             headers.set("Content-Security-Policy", CSP);
             headers.set("X-Content-Type-Options", "nosniff");

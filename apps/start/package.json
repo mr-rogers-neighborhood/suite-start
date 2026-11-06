@@ -1,6 +1,6 @@
 {
   "name": "@suite/start",
-  "version": "0.1.0",
+  "version": "0.3.0",
   "productName": "Suite Start",
   "private": true,
   "description": "The Suite launcher: discovers installed apps from signed manifests, routes suite:// links and files, and starts the right process. It never holds a document.",
@@ -15,7 +15,8 @@
     "typecheck": "tsc --noEmit -p tsconfig.json"
   },
   "dependencies": {
-    "@suite/contracts": "0.1.0"
+    "@suite/contracts": "0.3.0",
+    "@suite/desktop": "0.3.0"
   },
   "devDependencies": {
     "@types/node": "^26.6.5",
