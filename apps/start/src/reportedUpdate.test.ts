@@ -47,6 +47,7 @@ describe("readReportedUpdate", () => {
       version: "0.1.0",
       available: null,
       checkedAt: "2026-11-06T12:00:00.000Z",
+      source: "app",
     });
   });
 
@@ -62,6 +63,7 @@ describe("readReportedUpdate", () => {
       version: null,
       available: null,
       checkedAt: null,
+      source: null,
     });
   });
 

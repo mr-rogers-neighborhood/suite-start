@@ -25,6 +25,8 @@ export interface ReportedUpdate {
   readonly available: string | null;
   /** When the app last asked, ISO-8601. */
   readonly checkedAt: string | null;
+  /** Who answered: the app's own report, or a check the hub ran when asked. */
+  readonly source: "app" | "check" | null;
 }
 
 /** The report an install has not written yet. */
@@ -33,6 +35,7 @@ export const UNREPORTED: ReportedUpdate = {
   version: null,
   available: null,
   checkedAt: null,
+  source: null,
 };
 
 /** Where an app keeps the report: its own data directory, beside its other state. */
@@ -83,6 +86,38 @@ export async function readReportedUpdate(
   return fromState(parsed.value);
 }
 
+/**
+ * The report a check produces, which wins over what the app last said.
+ *
+ * A check is newer by construction: it ran because a person asked for it now. When
+ * the check finds nothing newer, the card says so and says when, rather than
+ * falling back to a report from three weeks ago.
+ */
+export function fromCheck(
+  installedVersion: string,
+  check: {
+    readonly version: string | null;
+    readonly reason: string | null;
+    readonly checkedAt: string;
+  },
+): ReportedUpdate {
+  if (check.version === null) return UNREPORTED;
+  const available = updateAvailable({
+    format: "suite.update-state",
+    version: installedVersion,
+    available: check.version,
+    checkedAt: check.checkedAt,
+    channel: "stable",
+  });
+  return {
+    state: available ? "available" : "current",
+    version: installedVersion,
+    available: check.version,
+    checkedAt: check.checkedAt,
+    source: "check",
+  };
+}
+
 /** The report a parsed file describes. */
 export function fromState(state: SuiteUpdateState): ReportedUpdate {
   return {
@@ -90,5 +125,6 @@ export function fromState(state: SuiteUpdateState): ReportedUpdate {
     version: state.version,
     available: state.available,
     checkedAt: state.checkedAt,
+    source: "app",
   };
 }

@@ -6,6 +6,7 @@ export const UNREPORTED = {
     version: null,
     available: null,
     checkedAt: null,
+    source: null,
 };
 /** Where an app keeps the report: its own data directory, beside its other state. */
 export function updateStatePath(appId, options) {
@@ -43,6 +44,31 @@ export async function readReportedUpdate(appId, options, fileSystem) {
         return EMPTY;
     return fromState(parsed.value);
 }
+/**
+ * The report a check produces, which wins over what the app last said.
+ *
+ * A check is newer by construction: it ran because a person asked for it now. When
+ * the check finds nothing newer, the card says so and says when, rather than
+ * falling back to a report from three weeks ago.
+ */
+export function fromCheck(installedVersion, check) {
+    if (check.version === null)
+        return UNREPORTED;
+    const available = updateAvailable({
+        format: "suite.update-state",
+        version: installedVersion,
+        available: check.version,
+        checkedAt: check.checkedAt,
+        channel: "stable",
+    });
+    return {
+        state: available ? "available" : "current",
+        version: installedVersion,
+        available: check.version,
+        checkedAt: check.checkedAt,
+        source: "check",
+    };
+}
 /** The report a parsed file describes. */
 export function fromState(state) {
     return {
@@ -50,6 +76,7 @@ export function fromState(state) {
         version: state.version,
         available: state.available,
         checkedAt: state.checkedAt,
+        source: "app",
     };
 }
 //# sourceMappingURL=reportedUpdate.js.map

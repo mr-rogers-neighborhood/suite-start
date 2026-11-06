@@ -78,6 +78,20 @@ if (typeof bridge !== "object" || bridge === null) {
     await refresh();
   });
 
+  // On demand: one request per app that names a feed, and nothing on a timer.
+  // The answer arrives as a broadcast, so the page re-reads rather than guessing.
+  const check = document.getElementById("check-updates");
+  check.addEventListener("click", async () => {
+    check.disabled = true;
+    check.textContent = "Checking…";
+    try {
+      await bridge.checkUpdates();
+    } finally {
+      check.disabled = false;
+      check.textContent = "Check for updates";
+    }
+  });
+
   // A launch Start initiated changes what is recent, so the window re-reads
   // rather than trusting what it already drew.
   globalThis.addEventListener("focus", () => void refresh());

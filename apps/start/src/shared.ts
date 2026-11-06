@@ -18,6 +18,7 @@ export const START_IPC = {
   recents: "suite:start:recents",
   forgetRecent: "suite:start:forget",
   openFile: "suite:start:open-file",
+  checkUpdates: "suite:start:check-updates",
   info: "suite:start:info",
 } as const;
 

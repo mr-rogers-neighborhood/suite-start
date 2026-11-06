@@ -17,6 +17,8 @@ contextBridge.exposeInMainWorld("suiteStart", {
   recents: () => ipcRenderer.invoke("suite:start:recents"),
   forgetRecent: (path) => ipcRenderer.invoke("suite:start:forget", path),
   openFile: (path) => ipcRenderer.invoke("suite:start:open-file", path),
+  // On demand: the page asks, main fetches, nothing runs on a timer.
+  checkUpdates: () => ipcRenderer.invoke("suite:start:check-updates"),
   info: () => ipcRenderer.invoke("suite:start:info"),
   // The window outlives no page load, so the listener is never removed.
   onChanged: (listener) => {

@@ -16,6 +16,7 @@ export declare const START_IPC: {
     readonly recents: "suite:start:recents";
     readonly forgetRecent: "suite:start:forget";
     readonly openFile: "suite:start:open-file";
+    readonly checkUpdates: "suite:start:check-updates";
     readonly info: "suite:start:info";
 };
 /** Pushed rather than invoked: the window redraws from what arrives here. */

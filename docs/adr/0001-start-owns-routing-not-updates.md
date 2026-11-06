@@ -1,6 +1,6 @@
 # ADR-0001: Start owns routing, not updates
 
-- Status: accepted
+- Status: accepted; amended 2026-11-06 (the hub may read a feed when asked)
 - Date: 2026-11-06
 
 ## Context
@@ -25,7 +25,7 @@ manifest, and a race the first time both ran.
 - Start shows what an app reports about itself. An app's update state (current version, whether a newer
   one exists, when it last checked) is written by the app into its own user data directory, and Start
   reads that file.
-- Start makes no network request of its own, so the sentence in its Settings pane stays true.
+- Start makes no request unless a person asks for one. See the amendment below.
 - "Update" in Start opens the app, which updates on launch.
 - Installing an app that is not on the machine at all is Start's job, because there is no app yet to
   own its own bytes. That is the installer, and it is a later milestone.
@@ -39,3 +39,24 @@ manifest, and a race the first time both ran.
   re-checked and the manifest re-read rather than cached.
 - The installer is the only place Start places files, which keeps the rule easy to state and easy to
   test: everything before it is read-only.
+
+## Amendment (2026-11-06): the hub may read a feed when asked
+
+The decision above leaves the hub unable to answer "is there a newer version" until the app has run and
+written its report. On a machine where an app has not been opened in weeks, the answer is weeks old,
+which makes the feature close to useless for the question a person actually has.
+
+So the hub may also read an app's release feed, under four conditions:
+
+- **On demand only.** A person presses _Check for updates_. There is no timer, no request at launch, and
+  no request in the background.
+- **One source.** The hub reads the same file the app's updater reads (`latest-linux.yml`, `latest.yml`,
+  `latest-mac.yml` by platform) from the base URL the app's own manifest names in `update.feed`. It does
+  not consult a second source, so the hub and the app cannot disagree about what is newest.
+- **The answer is labelled.** The card says whether the version came from the app or from a check, and
+  when the check ran. A stale answer is shown as stale rather than as a fact.
+- **It changes no file.** The check is read-only. Installing and replacing remain the app's business,
+  and the rule from the body of this record is unchanged: Start asks and reads, never performs.
+
+The sentence in Settings changes with it, from "this build makes no network request" to the truth: no
+request unless you ask for one.

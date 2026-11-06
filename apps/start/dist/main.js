@@ -10,9 +10,11 @@ import { registryStore } from "./installs.js";
 import { defaultRoots, nodeRegistryFileSystem } from "./nodeFileSystem.js";
 import { RECENT_LIMIT, recentsFile } from "./recents.js";
 import { appById, discoverApps } from "./registry.js";
-import { readReportedUpdate } from "./reportedUpdate.js";
+import { checkFeed } from "./releaseFeed.js";
+import { fromCheck, readReportedUpdate, } from "./reportedUpdate.js";
 import { describeRouteRejection, routeLaunch } from "./route.js";
 import { START_CHANGED, START_IPC } from "./shared.js";
+import { checkForUpdates } from "./updateCheck.js";
 /**
  * Suite Start.
  *
@@ -103,15 +105,24 @@ async function discover() {
     });
     return { apps: result.apps, refused: result.rejected };
 }
+/**
+ * Answers from checks this session ran, by app id.
+ *
+ * Only a check a person asked for lands here, and only for the life of the window:
+ * a cached answer that outlives the question becomes a claim nobody made.
+ */
+const checkedUpdates = new Map();
 async function state() {
     const { apps, refused } = await discover();
     const recent = await recents.list();
     const files = await indexDocuments(documentFolders(), nodeRegistryFileSystem(), new Set(apps.map((entry) => entry.manifest.id)));
     // Each app reports its own update state; the hub reads it and asks nothing.
-    const updates = new Map(await Promise.all(apps.map(async (entry) => [
-        entry.manifest.id,
-        await readReportedUpdate(entry.manifest.id, updateLookup(), nodeRegistryFileSystem()),
-    ])));
+    const updates = new Map();
+    await Promise.all(apps.map(async (entry) => {
+        const checked = checkedUpdates.get(entry.manifest.id);
+        updates.set(entry.manifest.id, checked ??
+            (await readReportedUpdate(entry.manifest.id, updateLookup(), nodeRegistryFileSystem())));
+    }));
     const cards = appCards({
         apps,
         rejected: refused,
@@ -295,6 +306,25 @@ function registerIpc() {
             return;
         await open(path);
     });
+    /**
+     * Ask each app's feed whether something newer exists.
+     *
+     * On demand, one request per app, and nothing is written: the answer is a
+     * reading, and installing remains the app's business.
+     */
+    onIpc(START_IPC.checkUpdates, async () => {
+        const { apps } = await discover();
+        await Promise.all(apps.map(async (entry) => {
+            const feed = entry.manifest.update?.feed;
+            if (feed === undefined)
+                return;
+            const check = await checkFeed(feed, process.platform, (url) => fetch(url));
+            const merged = fromCheck(entry.manifest.version, check);
+            if (merged.source === "check")
+                checkedUpdates.set(entry.manifest.id, merged);
+        }));
+        await broadcast();
+    });
     onIpc(START_IPC.info, () => ({
         host: "start",
         version: app.getVersion(),
@@ -397,6 +427,17 @@ else {
         ]));
         window = createWindow();
         await show();
+        // The hub updates itself like any app: its own feed, its own report. A dev run
+        // has no feed, so it does not ask.
+        void checkForUpdates({
+            dataDir: dataDirectory,
+            version: app.getVersion(),
+            channel: "alpha",
+            packaged: app.isPackaged,
+        }).then(({ error }) => {
+            if (error !== null && app.isPackaged)
+                console.warn(`[update] ${error}`);
+        });
         const coldStart = targetFromArgv(process.argv);
         if (coldStart)
             pendingTargets.push(coldStart);

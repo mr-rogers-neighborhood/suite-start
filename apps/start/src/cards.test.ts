@@ -44,6 +44,7 @@ const UNREPORTED: ReportedUpdate = {
   version: null,
   available: null,
   checkedAt: null,
+  source: null,
 };
 
 const NO_UPDATES: ReadonlyMap<string, ReportedUpdate> = new Map();
@@ -75,6 +76,7 @@ describe("appCards", () => {
             version: "0.1.0",
             available: "0.2.0",
             checkedAt: "2026-11-06T12:00:00.000Z",
+            source: "check",
           },
         ],
       ]),
