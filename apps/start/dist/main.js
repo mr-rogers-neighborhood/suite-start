@@ -4,7 +4,7 @@ import { pathToFileURL } from "node:url";
 import { appDocumentsFolder, parseDeepLink, SUITE_APPS, suiteDocumentsRoot, } from "@suite/contracts";
 import { desktopCsp, isTrustedSender, resolveProtocolAsset } from "@suite/desktop";
 import { app, BrowserWindow, dialog, ipcMain, Menu, net, protocol, shell } from "electron";
-import { appCards } from "./cards.js";
+import { appCards, fileCards } from "./cards.js";
 import { catalogPathFromEnv, readCatalog } from "./catalog.js";
 import { indexDocuments, isInsideDocuments } from "./fileIndex.js";
 import { registryStore } from "./installs.js";
@@ -127,7 +127,7 @@ async function state() {
     return {
         apps: cards,
         recents: recentCards,
-        files,
+        files: fileCards(files),
         settings: { dataDirectory, documentsRoot: documentsRoot(), installRoots: roots() },
         catalog: catalogSummary(catalogRead),
         version: app.getVersion(),

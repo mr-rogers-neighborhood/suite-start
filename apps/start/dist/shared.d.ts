@@ -51,6 +51,8 @@ export interface FileCard {
     readonly folder: string;
     readonly modifiedAt: number;
     readonly installed: boolean;
+    /** The link that opens this document in its app, when its name survives one. */
+    readonly link: string | null;
 }
 /** What the catalog said, in the words the Settings pane uses. */
 export interface CatalogSummary {

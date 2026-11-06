@@ -1,4 +1,4 @@
-import { catalogState, findReleaseEntry } from "@suite/contracts";
+import { catalogState, findReleaseEntry, workspaceLink } from "@suite/contracts";
 /** The folder name a refused install is known by. */
 function nameFor(path) {
     const segments = path.split(/[\\/]+/u).filter((segment) => segment.length > 0);
@@ -44,5 +44,25 @@ export function appCards(input) {
 /** How many cards carry a reason; the number the rail shows. */
 export function attentionCount(cards) {
     return cards.filter((card) => !card.health.ok).length;
+}
+/**
+ * One row per indexed document, with the link that opens it.
+ *
+ * The link is built here rather than in the renderer so the shape has exactly one
+ * author — `workspaceLink` in the contract — and so the hub cannot invent a link
+ * an app would refuse. A name the builder refuses carries no link, and the row
+ * simply does not offer one.
+ */
+export function fileCards(files) {
+    return files.map((file) => ({
+        path: file.path,
+        name: file.name,
+        appId: file.appId,
+        appName: file.appName,
+        folder: file.folder,
+        modifiedAt: file.modifiedAt,
+        installed: file.installed,
+        link: workspaceLink(file.appId, file.name),
+    }));
 }
 //# sourceMappingURL=cards.js.map

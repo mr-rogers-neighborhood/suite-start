@@ -2,7 +2,7 @@ import type { CatalogRead } from "./catalog.js";
 import type { IndexedFile } from "./fileIndex.js";
 import type { RecentEntry } from "./recents.js";
 import type { DiscoveredApp, RejectedInstall } from "./registry.js";
-import type { AppCard } from "./shared.js";
+import type { AppCard, FileCard } from "./shared.js";
 /**
  * One card per app, and one per install that cannot be used.
  *
@@ -21,4 +21,13 @@ export interface CardInput {
 export declare function appCards(input: CardInput): readonly AppCard[];
 /** How many cards carry a reason; the number the rail shows. */
 export declare function attentionCount(cards: readonly AppCard[]): number;
+/**
+ * One row per indexed document, with the link that opens it.
+ *
+ * The link is built here rather than in the renderer so the shape has exactly one
+ * author — `workspaceLink` in the contract — and so the hub cannot invent a link
+ * an app would refuse. A name the builder refuses carries no link, and the row
+ * simply does not offer one.
+ */
+export declare function fileCards(files: readonly IndexedFile[]): readonly FileCard[];
 //# sourceMappingURL=cards.d.ts.map

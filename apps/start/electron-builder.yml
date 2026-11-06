@@ -27,6 +27,8 @@ electronFuses:
   enableNodeCliInspectArguments: false
   enableEmbeddedAsarIntegrityValidation: true
   onlyLoadAppFromAsar: true
+  # Every page is served from a custom protocol now, so file:// needs no extra privileges.
+  grantFileProtocolExtraPrivileges: false
 
 linux:
   target:

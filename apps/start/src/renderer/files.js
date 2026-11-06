@@ -25,6 +25,24 @@ function fileRow(file, actions) {
   open.append(el("span", "row-name", file.name), el("span", "row-meta", meta));
   open.addEventListener("click", () => actions.openFile(file.path));
   row.append(open);
+
+  // The link is what makes a document reachable from outside the hub: pasted in a
+  // message, it opens the same file for whoever runs the suite.
+  if (file.link) {
+    const copy = el("button", "row-copy");
+    copy.type = "button";
+    copy.textContent = "Copy link";
+    copy.title = file.link;
+    copy.addEventListener("click", async () => {
+      const copied = await actions.copyLink(file.link);
+      copy.textContent = copied ? "Copied" : "Copy failed";
+      window.setTimeout(() => {
+        copy.textContent = "Copy link";
+      }, 1_500);
+    });
+    row.append(copy);
+  }
+
   return row;
 }
 

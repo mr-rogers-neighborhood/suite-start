@@ -1,6 +1,6 @@
 import type { SuiteAppManifest } from "@suite/contracts";
 import { describe, expect, it } from "vitest";
-import { appCards, attentionCount } from "./cards.js";
+import { appCards, attentionCount, fileCards } from "./cards.js";
 import type { CatalogRead } from "./catalog.js";
 import type { IndexedFile } from "./fileIndex.js";
 import type { DiscoveredApp } from "./registry.js";
@@ -131,5 +131,21 @@ describe("appCards", () => {
     });
     expect(attentionCount(cards)).toBe(1);
     expect(attentionCount([])).toBe(0);
+  });
+});
+
+describe("fileCards", () => {
+  it("gives every row the link that opens it", () => {
+    const rows = fileCards([indexed()]);
+    expect(rows[0]).toMatchObject({
+      name: "Research.canvas",
+      appId: "canvas",
+      link: "suite://canvas/workspace/Research.canvas",
+    });
+  });
+
+  it("leaves a row without a link when its name would not survive one", () => {
+    const rows = fileCards([indexed({ name: "a/b.canvas" })]);
+    expect(rows[0]?.link).toBeNull();
   });
 });

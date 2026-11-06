@@ -84,6 +84,10 @@ workspace, and owns the cross-app e2e suite. `pnpm preflight` there says what is
 launcher, so it starts a process and gets out of the way — it does not embed an app's UI, proxy its
 documents, or run its code.
 
+A file row offers **Copy link**, which is `suite://<app>/workspace/<file name>`. Pasting one opens that
+document in that app: the hub routes it, and the app resolves the name against its own folder. The link
+names a file rather than an id, so it stays readable and needs no registry to resolve.
+
 Discovery joins two records. The **manifest** (`suite.app.json`) is what an app ships beside its own
 executable and says what it is; the **install record** (`installs.json`, in the data directory) is the
 only place an executable path lives. A manifest may not name a binary, so a tampered one cannot redirect

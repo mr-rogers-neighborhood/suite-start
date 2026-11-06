@@ -10,7 +10,7 @@ import {
 } from "@suite/contracts";
 import { desktopCsp, isTrustedSender, resolveProtocolAsset } from "@suite/desktop";
 import { app, BrowserWindow, dialog, ipcMain, Menu, net, protocol, shell } from "electron";
-import { appCards } from "./cards.js";
+import { appCards, fileCards } from "./cards.js";
 import { type CatalogRead, catalogPathFromEnv, readCatalog } from "./catalog.js";
 import { type DocumentsFolder, indexDocuments, isInsideDocuments } from "./fileIndex.js";
 import { type RegistryStore, registryStore } from "./installs.js";
@@ -165,7 +165,7 @@ async function state(): Promise<LauncherState> {
   return {
     apps: cards,
     recents: recentCards,
-    files,
+    files: fileCards(files),
     settings: { dataDirectory, documentsRoot: documentsRoot(), installRoots: roots() },
     catalog: catalogSummary(catalogRead),
     version: app.getVersion(),

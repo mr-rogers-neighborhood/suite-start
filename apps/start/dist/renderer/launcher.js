@@ -30,6 +30,21 @@ const actions = {
     await bridge.openFile(path);
     await refresh();
   },
+  /**
+   * Put a document's link on the clipboard.
+   *
+   * The clipboard belongs to the page rather than to the hub: it is one async
+   * call, the page is a secure origin, and a channel that writes the system
+   * clipboard in main would be a capability for nothing.
+   */
+  async copyLink(link) {
+    try {
+      await navigator.clipboard.writeText(link);
+      return true;
+    } catch {
+      return false;
+    }
+  },
 };
 
 function render(state) {
