@@ -11,20 +11,14 @@ import {
 import { desktopCsp, isTrustedSender, resolveProtocolAsset } from "@suite/desktop";
 import { app, BrowserWindow, dialog, ipcMain, Menu, net, protocol, shell } from "electron";
 import { appCards, fileCards } from "./cards.js";
-import { type CatalogRead, catalogPathFromEnv, readCatalog } from "./catalog.js";
 import { type DocumentsFolder, indexDocuments, isInsideDocuments } from "./fileIndex.js";
 import { type RegistryStore, registryStore } from "./installs.js";
 import { defaultRoots, nodeRegistryFileSystem } from "./nodeFileSystem.js";
 import { RECENT_LIMIT, type RecentsFile, recentsFile } from "./recents.js";
 import { appById, type DiscoveredApp, discoverApps, type InstallRecord } from "./registry.js";
+import { readReportedUpdate, type UpdateLookup } from "./reportedUpdate.js";
 import { describeRouteRejection, routeLaunch } from "./route.js";
-import {
-  type CatalogSummary,
-  type LauncherState,
-  type RecentCard,
-  START_CHANGED,
-  START_IPC,
-} from "./shared.js";
+import { type LauncherState, type RecentCard, START_CHANGED, START_IPC } from "./shared.js";
 
 /**
  * Suite Start.
@@ -95,6 +89,21 @@ function documentsRoot(): string {
   );
 }
 
+/**
+ * Where each app keeps its machine-local state.
+ *
+ * The same roots `suitePaths` gives the app itself, so a report is read from the
+ * place it was written. The documents override does not apply: an update report is
+ * machine state, not a document.
+ */
+function updateLookup(): UpdateLookup {
+  return {
+    platform: process.platform,
+    home: app.getPath("home"),
+    xdgDataHome: process.env.XDG_DATA_HOME,
+  };
+}
+
 function documentFolders(): readonly DocumentsFolder[] {
   const platform = process.platform;
   const home = app.getPath("home");
@@ -122,20 +131,26 @@ async function discover(): Promise<{
   return { apps: result.apps, refused: result.rejected };
 }
 
-function catalogSummary(read: CatalogRead): CatalogSummary {
-  if (read.state === "configured") return { state: "configured", path: read.path, reason: null };
-  if (read.state === "refused") return { state: "refused", path: read.path, reason: read.reason };
-  return { state: "none", path: null, reason: null };
-}
-
 async function state(): Promise<LauncherState> {
   const { apps, refused } = await discover();
   const recent = await recents.list();
-  const catalogRead = await readCatalog(catalogPathFromEnv(), nodeRegistryFileSystem());
   const files = await indexDocuments(
     documentFolders(),
     nodeRegistryFileSystem(),
     new Set(apps.map((entry) => entry.manifest.id)),
+  );
+
+  // Each app reports its own update state; the hub reads it and asks nothing.
+  const updates = new Map(
+    await Promise.all(
+      apps.map(
+        async (entry) =>
+          [
+            entry.manifest.id,
+            await readReportedUpdate(entry.manifest.id, updateLookup(), nodeRegistryFileSystem()),
+          ] as const,
+      ),
+    ),
   );
 
   const cards = appCards({
@@ -143,7 +158,7 @@ async function state(): Promise<LauncherState> {
     rejected: refused,
     files,
     recents: recent,
-    catalog: catalogRead,
+    updates,
   });
 
   const recentCards: RecentCard[] = recent
@@ -167,7 +182,6 @@ async function state(): Promise<LauncherState> {
     recents: recentCards,
     files: fileCards(files),
     settings: { dataDirectory, documentsRoot: documentsRoot(), installRoots: roots() },
-    catalog: catalogSummary(catalogRead),
     version: app.getVersion(),
   };
 }

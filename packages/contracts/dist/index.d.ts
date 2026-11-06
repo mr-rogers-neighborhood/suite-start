@@ -4,6 +4,6 @@ export { DEFAULT_APP_IDS, type DeepLinkParse, type DeepLinkRejection, deepLinkPr
 export { deploymentAllows, parseDeployment, relayFor, SUITE_DEPLOYMENT_FORMAT, SUITE_DEPLOYMENT_FORMAT_VERSION, type SuiteDeployment, type SuiteDeploymentFeature, sellsPlans, suiteDeploymentAuthSchema, suiteDeploymentFeaturesSchema, suiteDeploymentSchema, } from "./deployment.js";
 export { type ContractIssue, type ContractParse, describeIssues, parseWith, } from "./parse.js";
 export { joinPath, type SuiteAppName, type SuitePathOptions, type SuitePaths, type SuitePlatform, suitePaths, } from "./paths.js";
-export { type CatalogState, catalogState, findReleaseEntry, parseReleaseCatalog, SUITE_RELEASE_CATALOG_FORMAT, SUITE_RELEASE_CATALOG_FORMAT_VERSION, type SuiteReleaseArtifact, type SuiteReleaseCatalog, type SuiteReleaseEntry, suiteReleaseArtifactSchema, suiteReleaseCatalogSchema, suiteReleaseEntrySchema, } from "./release.js";
 export { appDocumentsFolder, SUITE_APPS, type SuiteAppDocumentsOptions, type SuiteAppEntry, type SuiteDocumentAppId, suiteDocumentsRoot, } from "./suiteApps.js";
+export { parseUpdateState, SUITE_UPDATE_STATE_FILE, SUITE_UPDATE_STATE_FORMAT, type SuiteUpdateState, suiteUpdateStateSchema, updateAvailable, } from "./updateState.js";
 //# sourceMappingURL=index.d.ts.map

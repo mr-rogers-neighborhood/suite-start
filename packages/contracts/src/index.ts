@@ -63,20 +63,6 @@ export {
   suitePaths,
 } from "./paths.js";
 export {
-  type CatalogState,
-  catalogState,
-  findReleaseEntry,
-  parseReleaseCatalog,
-  SUITE_RELEASE_CATALOG_FORMAT,
-  SUITE_RELEASE_CATALOG_FORMAT_VERSION,
-  type SuiteReleaseArtifact,
-  type SuiteReleaseCatalog,
-  type SuiteReleaseEntry,
-  suiteReleaseArtifactSchema,
-  suiteReleaseCatalogSchema,
-  suiteReleaseEntrySchema,
-} from "./release.js";
-export {
   appDocumentsFolder,
   SUITE_APPS,
   type SuiteAppDocumentsOptions,
@@ -84,3 +70,11 @@ export {
   type SuiteDocumentAppId,
   suiteDocumentsRoot,
 } from "./suiteApps.js";
+export {
+  parseUpdateState,
+  SUITE_UPDATE_STATE_FILE,
+  SUITE_UPDATE_STATE_FORMAT,
+  type SuiteUpdateState,
+  suiteUpdateStateSchema,
+  updateAvailable,
+} from "./updateState.js";

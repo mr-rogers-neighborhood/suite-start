@@ -1,4 +1,5 @@
-import type { CatalogState, SuiteReleaseChannel } from "@suite/contracts";
+import type { SuiteReleaseChannel } from "@suite/contracts";
+import type { ReportedUpdate } from "./reportedUpdate.js";
 
 /**
  * What the hub window asks the main process for.
@@ -35,7 +36,8 @@ export interface AppCard {
   readonly name: string;
   readonly version: string;
   readonly channel: SuiteReleaseChannel;
-  readonly update: CatalogState;
+  /** What the app says about its own updating, or `unknown` before it has asked. */
+  readonly update: ReportedUpdate;
   readonly executable: string | null;
   readonly fileExtensions: readonly string[];
   readonly lastOpenedAt: number | null;
@@ -55,13 +57,6 @@ export interface FileCard {
   readonly installed: boolean;
   /** The link that opens this document in its app, when its name survives one. */
   readonly link: string | null;
-}
-
-/** What the catalog said, in the words the Settings pane uses. */
-export interface CatalogSummary {
-  readonly state: "none" | "configured" | "refused";
-  readonly path: string | null;
-  readonly reason: string | null;
 }
 
 /** One recent file. */
@@ -91,6 +86,5 @@ export interface LauncherState {
   readonly recents: readonly RecentCard[];
   readonly files: readonly FileCard[];
   readonly settings: StartSettings;
-  readonly catalog: CatalogSummary;
   readonly version: string;
 }

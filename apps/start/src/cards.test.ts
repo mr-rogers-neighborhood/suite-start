@@ -1,9 +1,9 @@
 import type { SuiteAppManifest } from "@suite/contracts";
 import { describe, expect, it } from "vitest";
 import { appCards, attentionCount, fileCards } from "./cards.js";
-import type { CatalogRead } from "./catalog.js";
 import type { IndexedFile } from "./fileIndex.js";
 import type { DiscoveredApp } from "./registry.js";
+import type { ReportedUpdate } from "./reportedUpdate.js";
 
 function discovered(overrides: Partial<SuiteAppManifest> = {}): DiscoveredApp {
   return {
@@ -38,7 +38,15 @@ function indexed(overrides: Partial<IndexedFile> = {}): IndexedFile {
   };
 }
 
-const NONE = { state: "none" } as const;
+/** The report an app that has never checked gives. */
+const UNREPORTED: ReportedUpdate = {
+  state: "unknown",
+  version: null,
+  available: null,
+  checkedAt: null,
+};
+
+const NO_UPDATES: ReadonlyMap<string, ReportedUpdate> = new Map();
 
 describe("appCards", () => {
   it("counts the files the index found for the app", () => {
@@ -47,44 +55,42 @@ describe("appCards", () => {
       rejected: [],
       files: [indexed(), indexed({ name: "B.canvas" }), indexed({ appId: "budget" })],
       recents: [],
-      catalog: NONE,
+      updates: NO_UPDATES,
     });
     expect(card?.fileCount).toBe(2);
     expect(card?.health).toEqual({ ok: true });
   });
 
-  it("takes the channel from the manifest and the update state from the catalog", () => {
-    const catalog: CatalogRead = {
-      state: "configured",
-      path: "/catalog.json",
-      catalog: {
-        format: "suite.release.catalog",
-        formatVersion: 1,
-        generatedAt: "2026-11-05T09:00:00.000Z",
-        signature: "unsigned",
-        entries: [{ app: "canvas", version: "0.2.0", channel: "beta" }],
-      },
-    };
-
+  it("takes the channel from the manifest and the update state from the app", () => {
     const [card] = appCards({
       apps: [discovered({ update: { feed: "https://example.test/feed", channel: "beta" } })],
       rejected: [],
       files: [],
       recents: [],
-      catalog,
+      updates: new Map([
+        [
+          "canvas",
+          {
+            state: "available",
+            version: "0.1.0",
+            available: "0.2.0",
+            checkedAt: "2026-11-06T12:00:00.000Z",
+          },
+        ],
+      ]),
     });
-    expect(card).toMatchObject({ channel: "beta", update: "update-available" });
+    expect(card).toMatchObject({ channel: "beta", update: { state: "available" } });
   });
 
-  it("leaves the update state unknown when no catalog is configured", () => {
+  it("leaves the update state unknown when the app never reported one", () => {
     const [card] = appCards({
       apps: [discovered()],
       rejected: [],
       files: [],
       recents: [],
-      catalog: NONE,
+      updates: NO_UPDATES,
     });
-    expect(card?.update).toBe("unknown");
+    expect(card?.update).toEqual(UNREPORTED);
   });
 
   it("carries the last-open time from Start's own history", () => {
@@ -93,7 +99,7 @@ describe("appCards", () => {
       rejected: [],
       files: [],
       recents: [{ path: "/a.canvas", appId: "canvas", openedAt: 1_700_000_000_000 }],
-      catalog: NONE,
+      updates: NO_UPDATES,
     });
     expect(card?.lastOpenedAt).toBe(1_700_000_000_000);
   });
@@ -107,7 +113,7 @@ describe("appCards", () => {
       ],
       files: [],
       recents: [],
-      catalog: NONE,
+      updates: NO_UPDATES,
     });
 
     expect(cards).toHaveLength(3);
@@ -127,7 +133,7 @@ describe("appCards", () => {
       rejected: [{ path: "/installs/budget/suite.app.json", reason: "the manifest is not JSON" }],
       files: [],
       recents: [],
-      catalog: NONE,
+      updates: NO_UPDATES,
     });
     expect(attentionCount(cards)).toBe(1);
     expect(attentionCount([])).toBe(0);

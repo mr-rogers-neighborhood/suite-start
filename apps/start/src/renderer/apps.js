@@ -1,11 +1,21 @@
 import { el, relativeTime } from "./format.js";
 
-/** What the catalog said, in three words a card can carry. */
-const UPDATE_LABELS = {
-  "update-available": "Update available",
-  "up-to-date": "Up to date",
-  unknown: "Update state unknown",
-};
+/**
+ * What the app said about itself, in the words a card can carry.
+ *
+ * The app owns its update, so these are a reading of its report rather than a
+ * claim the hub makes. An app that has never asked says so, with the version it
+ * is running when it reported one.
+ */
+function updateLabel(update, version) {
+  if (update.state === "available") return `Update available · ${update.available}`;
+  if (update.state === "current") {
+    const when =
+      update.checkedAt === null ? "" : ` · checked ${relativeTime(Date.parse(update.checkedAt))}`;
+    return `Up to date${when}`;
+  }
+  return version === null ? "Update state unknown" : `${version} · update state unknown`;
+}
 
 function fileCountLabel(count) {
   if (count === 0) return "No files";
@@ -51,9 +61,9 @@ export function renderApps(state, actions) {
     const update = el(
       "p",
       "card-meta card-update",
-      `${app.channel} · ${UPDATE_LABELS[app.update] ?? UPDATE_LABELS.unknown}`,
+      `${app.channel} · ${updateLabel(app.update, app.version)}`,
     );
-    update.dataset.state = app.update;
+    update.dataset.state = app.update.state;
     card.append(update, el("p", "card-meta card-files", fileCountLabel(app.fileCount)));
 
     const buttons = el("div", "card-actions");

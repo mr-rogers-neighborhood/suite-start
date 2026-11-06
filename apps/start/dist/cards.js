@@ -1,4 +1,5 @@
-import { catalogState, findReleaseEntry, workspaceLink } from "@suite/contracts";
+import { workspaceLink } from "@suite/contracts";
+import { UNREPORTED } from "./reportedUpdate.js";
 /** The folder name a refused install is known by. */
 function nameFor(path) {
     const segments = path.split(/[\\/]+/u).filter((segment) => segment.length > 0);
@@ -11,15 +12,12 @@ function nameFor(path) {
 export function appCards(input) {
     const installed = input.apps.map((entry) => {
         const channel = entry.manifest.update?.channel ?? "stable";
-        const release = input.catalog.state === "configured"
-            ? findReleaseEntry(input.catalog.catalog, entry.manifest.id, channel)
-            : null;
         return {
             id: entry.manifest.id,
             name: entry.manifest.name,
             version: entry.manifest.version,
             channel,
-            update: catalogState(release, entry.manifest.version),
+            update: input.updates.get(entry.manifest.id) ?? UNREPORTED,
             executable: entry.executable,
             fileExtensions: entry.manifest.fileExtensions,
             lastOpenedAt: input.recents.find((row) => row.appId === entry.manifest.id)?.openedAt ?? null,
@@ -32,7 +30,7 @@ export function appCards(input) {
         name: nameFor(install.path),
         version: "unknown",
         channel: "stable",
-        update: "unknown",
+        update: UNREPORTED,
         executable: null,
         fileExtensions: [],
         lastOpenedAt: null,

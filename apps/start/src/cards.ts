@@ -1,8 +1,8 @@
-import { catalogState, findReleaseEntry, workspaceLink } from "@suite/contracts";
-import type { CatalogRead } from "./catalog.js";
+import { workspaceLink } from "@suite/contracts";
 import type { IndexedFile } from "./fileIndex.js";
 import type { RecentEntry } from "./recents.js";
 import type { DiscoveredApp, RejectedInstall } from "./registry.js";
+import { type ReportedUpdate, UNREPORTED } from "./reportedUpdate.js";
 import type { AppCard, FileCard } from "./shared.js";
 
 /**
@@ -18,7 +18,8 @@ export interface CardInput {
   readonly rejected: readonly RejectedInstall[];
   readonly files: readonly IndexedFile[];
   readonly recents: readonly RecentEntry[];
-  readonly catalog: CatalogRead;
+  /** What each app reported about its own updating, by app id. */
+  readonly updates: ReadonlyMap<string, ReportedUpdate>;
 }
 
 /** The folder name a refused install is known by. */
@@ -33,16 +34,12 @@ function nameFor(path: string): string {
 export function appCards(input: CardInput): readonly AppCard[] {
   const installed: AppCard[] = input.apps.map((entry) => {
     const channel = entry.manifest.update?.channel ?? "stable";
-    const release =
-      input.catalog.state === "configured"
-        ? findReleaseEntry(input.catalog.catalog, entry.manifest.id, channel)
-        : null;
     return {
       id: entry.manifest.id,
       name: entry.manifest.name,
       version: entry.manifest.version,
       channel,
-      update: catalogState(release, entry.manifest.version),
+      update: input.updates.get(entry.manifest.id) ?? UNREPORTED,
       executable: entry.executable,
       fileExtensions: entry.manifest.fileExtensions,
       lastOpenedAt: input.recents.find((row) => row.appId === entry.manifest.id)?.openedAt ?? null,
@@ -56,7 +53,7 @@ export function appCards(input: CardInput): readonly AppCard[] {
     name: nameFor(install.path),
     version: "unknown",
     channel: "stable",
-    update: "unknown",
+    update: UNREPORTED,
     executable: null,
     fileExtensions: [],
     lastOpenedAt: null,

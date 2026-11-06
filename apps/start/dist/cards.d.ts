@@ -1,7 +1,7 @@
-import type { CatalogRead } from "./catalog.js";
 import type { IndexedFile } from "./fileIndex.js";
 import type { RecentEntry } from "./recents.js";
 import type { DiscoveredApp, RejectedInstall } from "./registry.js";
+import { type ReportedUpdate } from "./reportedUpdate.js";
 import type { AppCard, FileCard } from "./shared.js";
 /**
  * One card per app, and one per install that cannot be used.
@@ -16,7 +16,8 @@ export interface CardInput {
     readonly rejected: readonly RejectedInstall[];
     readonly files: readonly IndexedFile[];
     readonly recents: readonly RecentEntry[];
-    readonly catalog: CatalogRead;
+    /** What each app reported about its own updating, by app id. */
+    readonly updates: ReadonlyMap<string, ReportedUpdate>;
 }
 export declare function appCards(input: CardInput): readonly AppCard[];
 /** How many cards carry a reason; the number the rail shows. */
