@@ -21,7 +21,10 @@ export function renderSettings(state) {
     "Updates",
     "Each app updates itself and reports what it found. This window reads that report and fetches nothing.",
   );
-  pair("Network", "None. This build makes no request of its own.");
+  pair(
+    "Network",
+    "This window makes no request of its own. The host listens for devices; see Sync.",
+  );
   pair("Version", state.version);
 
   // The one ask in the product: a URL, no account, nothing gated. The window

@@ -19,6 +19,9 @@ export const START_IPC = {
   forgetRecent: "suite:start:forget",
   openFile: "suite:start:open-file",
   checkUpdates: "suite:start:check-updates",
+  startSync: "suite:start:sync-start",
+  stopSync: "suite:start:sync-stop",
+  setSyncScope: "suite:start:sync-scope",
   info: "suite:start:info",
 } as const;
 
@@ -88,4 +91,27 @@ export interface LauncherState {
   readonly files: readonly FileCard[];
   readonly settings: StartSettings;
   readonly version: string;
+  /** The relay this machine runs, and what it is holding. */
+  readonly sync: SyncState;
+}
+
+/** What the Sync pane shows. No document content, because the host has none. */
+export interface SyncState {
+  readonly running: boolean;
+  readonly scope: "loopback" | "network";
+  readonly address: string | null;
+  readonly port: number;
+  readonly workspaces: readonly SyncWorkspace[];
+}
+
+export interface SyncWorkspace {
+  readonly workspaceId: string;
+  readonly frames: number;
+  readonly newestEpoch: number | null;
+  readonly members: readonly SyncMember[];
+}
+
+export interface SyncMember {
+  readonly deviceId: string;
+  readonly role: "owner" | "editor" | "viewer" | null;
 }

@@ -187,6 +187,12 @@ importers:
       '@suite/desktop':
         specifier: workspace:*
         version: link:../../packages/desktop
+      '@suite/host':
+        specifier: git+https://github.com/mr-rogers-neighborhood/suite-sync.git#v0.6.1&path:/packages/host
+        version: https://codeload.github.com/mr-rogers-neighborhood/suite-sync/tar.gz/d14340eaa12924d2471ab5804a02f8db75ef69af#path:/packages/host(@suite/sync@https://codeload.github.com/mr-rogers-neighborhood/suite-sync/tar.gz/d14340eaa12924d2471ab5804a02f8db75ef69af#path:/packages/protocol(@noble/ciphers@2.1.1))
+      '@suite/sync':
+        specifier: git+https://github.com/mr-rogers-neighborhood/suite-sync.git#v0.6.1&path:/packages/protocol
+        version: https://codeload.github.com/mr-rogers-neighborhood/suite-sync/tar.gz/d14340eaa12924d2471ab5804a02f8db75ef69af#path:/packages/protocol(@noble/ciphers@2.1.1)
       electron-updater:
         specifier: ^6.6.2
         version: 6.8.11(supports-color@7.2.0)
@@ -363,6 +369,14 @@ packages:
     engines: {node: '>=14.14'}
     hasBin: true
 
+  '@hpke/common@1.11.0':
+    resolution: {integrity: sha512-ZV551VgT4+pjTN1xlM1Zu9CrvLcff1sV1F2iFQJgg3gVNLy/hiOgLOjK3cz5LZYMKYkt54xe7ityu0rTYVSDGw==}
+    engines: {node: '>=16.0.0'}
+
+  '@hpke/core@1.9.0':
+    resolution: {integrity: sha512-pFxWl1nNJeQCSUFs7+GAblHvXBCjn9EPN65vdKlYQil2aURaRxfGMO6vBKGqm1YHTKwiAxJQNEI70PbSowMP9Q==}
+    engines: {node: '>=16.0.0'}
+
   '@isaacs/fs-minipass@4.0.1':
     resolution: {integrity: sha512-wgm9Ehl2jpeqP3zw/7mo3kRHFp5MEDhqAdwy1fTGkHAwnkGOVsgpvQhL8B5n1qlb01jV3n/bI0ZfZp5lWA1k4w==}
     engines: {node: '>=18.0.0'}
@@ -385,9 +399,17 @@ packages:
     resolution: {integrity: sha512-9QOtNffcOF/c1seMCDnjckb3R9WHcG34tky+FHpNKKCW0wc/scYLwMtO+ptyGUfMW0/b/n4qRiALlaFHc9Oj7Q==}
     engines: {node: '>= 10.0.0'}
 
+  '@noble/ciphers@2.1.1':
+    resolution: {integrity: sha512-bysYuiVfhxNJuldNXlFEitTVdNnYUc+XNJZd7Qm2a5j1vZHgY+fazadNFWFaMK/2vye0JVlxV3gHmC0WDfAOQw==}
+    engines: {node: '>= 20.19.0'}
+
   '@noble/hashes@1.8.0':
     resolution: {integrity: sha512-jCs9ldd7NwzpgXDIf6P3+NrHh9/sD6CQdxHyjQI+h/6rDNo88ypBxxz45UDuZHz9r3tNz7N/VInSVoVdtXEI4A==}
     engines: {node: ^14.21.3 || >=16}
+
+  '@noble/hashes@2.4.0':
+    resolution: {integrity: sha512-X5XaVWZIBCT7HHZGm5I7ZQXDwLG+bGXuSrMQAW+7Zvl87h1kmc1ZB1VSRJcpUfoUrGQp4Fkoxm5kZ+Ms+aW+eA==}
+    engines: {node: '>= 20.19.0'}
 
   '@oxc-project/types@0.156.0':
     resolution: {integrity: sha512-1Duyg48TdJNdyhEB8Xn1L36bT9Pv6GUtlKjHxOys8xkaF/rQq3XJE+bAurSK/AgIz5mGFsb77cn9Pb20+WCScw==}
@@ -514,6 +536,16 @@ packages:
   '@sindresorhus/is@4.6.0':
     resolution: {integrity: sha512-t09vSN3MdfsyCHoFcTRCH/iUtG7OJ0CsjzB8cjAmKc/va/kIgeDI/TxsigdncE/4be734m0cvIYwNaV4i2XqAw==}
     engines: {node: '>=10'}
+
+  '@suite/host@https://codeload.github.com/mr-rogers-neighborhood/suite-sync/tar.gz/d14340eaa12924d2471ab5804a02f8db75ef69af#path:/packages/host':
+    resolution: {gitHosted: true, integrity: sha512-vmlm32pmr7Ul5kJpcfinaxIr26YlzIa8ERq47QzuybZ5s+oKoTg/5rSk6hCc3T3jgV3ZC3C8xWT5m7NuWsWtgw==, path: /packages/host, tarball: https://codeload.github.com/mr-rogers-neighborhood/suite-sync/tar.gz/d14340eaa12924d2471ab5804a02f8db75ef69af}
+    version: 0.6.1
+    peerDependencies:
+      '@suite/sync': ^0.6.0
+
+  '@suite/sync@https://codeload.github.com/mr-rogers-neighborhood/suite-sync/tar.gz/d14340eaa12924d2471ab5804a02f8db75ef69af#path:/packages/protocol':
+    resolution: {gitHosted: true, integrity: sha512-vmlm32pmr7Ul5kJpcfinaxIr26YlzIa8ERq47QzuybZ5s+oKoTg/5rSk6hCc3T3jgV3ZC3C8xWT5m7NuWsWtgw==, path: /packages/protocol, tarball: https://codeload.github.com/mr-rogers-neighborhood/suite-sync/tar.gz/d14340eaa12924d2471ab5804a02f8db75ef69af}
+    version: 0.6.1
 
   '@szmarczak/http-timer@4.0.6':
     resolution: {integrity: sha512-4BAffykYOgO+5nzBWYwE3W90sBgLJoUPRWWcL8wlyiM8IB8ipJz3UMJ9KXQd1RKQXpKp8Tutn80HZtWsu2u76w==}
@@ -1550,6 +1582,30 @@ packages:
   truncate-utf8-bytes@1.0.2:
     resolution: {integrity: sha512-95Pu1QXQvruGEhv62XCMO3Mm90GscOCClvrIUwCM0PYOXK3kaF3l3sIHxx71ThJfcbM2O5Au6SO3AWCSEfW4mQ==}
 
+  ts-mls@1.6.4:
+    resolution: {integrity: sha512-BFb9qJ3V1+HIuifC+MtnlROEj3oc6NEzA7Ig1/LAmANDRhNay7UCnwkzijzHH9cav5wf1BoJw8KQ2mXiEhPy1Q==}
+    peerDependencies:
+      '@hpke/chacha20poly1305': 1.8.0
+      '@hpke/dhkem-x448': 1.8.0
+      '@hpke/hybridkem-x-wing': 0.7.0
+      '@hpke/ml-kem': 0.3.0
+      '@noble/ciphers': 2.1.1
+      '@noble/curves': 2.0.1
+      '@noble/post-quantum': 0.5.2
+    peerDependenciesMeta:
+      '@hpke/chacha20poly1305':
+        optional: true
+      '@hpke/dhkem-x448':
+        optional: true
+      '@hpke/hybridkem-x-wing':
+        optional: true
+      '@hpke/ml-kem':
+        optional: true
+      '@noble/curves':
+        optional: true
+      '@noble/post-quantum':
+        optional: true
+
   tslib@2.9.1:
     resolution: {integrity: sha512-a4Ux9VKuIMHsOS7ENbEq6hK2ZGYIT27Rtl0E4eD9KqwxhKiQeMZE/9xb3IdYwWaSOyIBQLExhQgXDTYoiCxnWA==}
 
@@ -1706,6 +1762,18 @@ packages:
 
   wrappy@1.0.2:
     resolution: {integrity: sha512-l4Sp/DRseor9wL6EvV2+TuQn63dMkPjZ/sp9XkghTEbV9KlPS1xUsZ3u7/IQO4wxtcFB4bgpQPRcR3QCvezPcQ==}
+
+  ws@8.22.1:
+    resolution: {integrity: sha512-oyL6OPYme/CmiFvNuGzeoxCJ4nOrZE2O1FwM9MWM1AsGri6nLXB2pg+lNA8aLeXMSav0J6eIVS1j6vUPzUtK9g==}
+    engines: {node: '>=10.0.0'}
+    peerDependencies:
+      bufferutil: ^4.0.1
+      utf-8-validate: '>=5.0.2'
+    peerDependenciesMeta:
+      bufferutil:
+        optional: true
+      utf-8-validate:
+        optional: true
 
   xmlbuilder@15.1.1:
     resolution: {integrity: sha512-yMqGBqtXyeN1e3TGYvgNgDVZ3j84W4cwkOXQswghol6APgZWaff9lnbvN7MHYJOiXsvGPXtjTYJEiC9J2wv9Eg==}
@@ -1876,6 +1944,12 @@ snapshots:
       - supports-color
     optional: true
 
+  '@hpke/common@1.11.0': {}
+
+  '@hpke/core@1.9.0':
+    dependencies:
+      '@hpke/common': 1.11.0
+
   '@isaacs/fs-minipass@4.0.1':
     dependencies:
       minipass: 7.1.3
@@ -1902,7 +1976,11 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
+  '@noble/ciphers@2.1.1': {}
+
   '@noble/hashes@1.8.0': {}
+
+  '@noble/hashes@2.4.0': {}
 
   '@oxc-project/types@0.156.0': {}
 
@@ -1980,6 +2058,28 @@ snapshots:
   '@rolldown/pluginutils@1.0.1': {}
 
   '@sindresorhus/is@4.6.0': {}
+
+  '@suite/host@https://codeload.github.com/mr-rogers-neighborhood/suite-sync/tar.gz/d14340eaa12924d2471ab5804a02f8db75ef69af#path:/packages/host(@suite/sync@https://codeload.github.com/mr-rogers-neighborhood/suite-sync/tar.gz/d14340eaa12924d2471ab5804a02f8db75ef69af#path:/packages/protocol(@noble/ciphers@2.1.1))':
+    dependencies:
+      '@suite/sync': https://codeload.github.com/mr-rogers-neighborhood/suite-sync/tar.gz/d14340eaa12924d2471ab5804a02f8db75ef69af#path:/packages/protocol(@noble/ciphers@2.1.1)
+      ws: 8.22.1
+    transitivePeerDependencies:
+      - bufferutil
+      - utf-8-validate
+
+  '@suite/sync@https://codeload.github.com/mr-rogers-neighborhood/suite-sync/tar.gz/d14340eaa12924d2471ab5804a02f8db75ef69af#path:/packages/protocol(@noble/ciphers@2.1.1)':
+    dependencies:
+      '@noble/hashes': 2.4.0
+      ts-mls: 1.6.4(@noble/ciphers@2.1.1)
+      zod: 4.6.7
+    transitivePeerDependencies:
+      - '@hpke/chacha20poly1305'
+      - '@hpke/dhkem-x448'
+      - '@hpke/hybridkem-x-wing'
+      - '@hpke/ml-kem'
+      - '@noble/ciphers'
+      - '@noble/curves'
+      - '@noble/post-quantum'
 
   '@szmarczak/http-timer@4.0.6':
     dependencies:
@@ -3087,6 +3187,11 @@ snapshots:
     dependencies:
       utf8-byte-length: 1.0.5
 
+  ts-mls@1.6.4(@noble/ciphers@2.1.1):
+    dependencies:
+      '@hpke/core': 1.9.0
+      '@noble/ciphers': 2.1.1
+
   tslib@2.9.1: {}
 
   type-fest@0.13.1:
@@ -3181,6 +3286,8 @@ snapshots:
       strip-ansi: 6.0.1
 
   wrappy@1.0.2: {}
+
+  ws@8.22.1: {}
 
   xmlbuilder@15.1.1: {}
 

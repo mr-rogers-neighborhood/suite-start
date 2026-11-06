@@ -17,7 +17,9 @@
   "dependencies": {
     "@suite/contracts": "workspace:*",
     "@suite/desktop": "workspace:*",
-    "electron-updater": "^6.6.2"
+    "electron-updater": "^6.6.2",
+    "@suite/sync": "git+https://github.com/mr-rogers-neighborhood/suite-sync.git#v0.6.1&path:/packages/protocol",
+    "@suite/host": "git+https://github.com/mr-rogers-neighborhood/suite-sync.git#v0.6.1&path:/packages/host"
   },
   "devDependencies": {
     "@types/node": "^26.6.5",

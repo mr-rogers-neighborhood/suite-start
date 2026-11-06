@@ -15,6 +15,9 @@ export const START_IPC = {
     forgetRecent: "suite:start:forget",
     openFile: "suite:start:open-file",
     checkUpdates: "suite:start:check-updates",
+    startSync: "suite:start:sync-start",
+    stopSync: "suite:start:sync-stop",
+    setSyncScope: "suite:start:sync-scope",
     info: "suite:start:info",
 };
 /** Pushed rather than invoked: the window redraws from what arrives here. */

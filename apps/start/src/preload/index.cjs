@@ -20,6 +20,11 @@ contextBridge.exposeInMainWorld("suiteStart", {
   // On demand: the page asks, main fetches, nothing runs on a timer.
   checkUpdates: () => ipcRenderer.invoke("suite:start:check-updates"),
   info: () => ipcRenderer.invoke("suite:start:info"),
+  // The relay this machine runs. The page can start, stop and widen it, and read
+  // what it holds — which is a count of encrypted frames and who may write.
+  startSync: () => ipcRenderer.invoke("suite:start:sync-start"),
+  stopSync: () => ipcRenderer.invoke("suite:start:sync-stop"),
+  setSyncScope: (scope) => ipcRenderer.invoke("suite:start:sync-scope", scope),
   // The window outlives no page load, so the listener is never removed.
   onChanged: (listener) => {
     ipcRenderer.on("suite:start:changed", (_event, state) => listener(state));

@@ -10,6 +10,7 @@ import { renderApps } from "./apps.js";
 import { renderFiles } from "./files.js";
 import { installRail } from "./rail.js";
 import { renderSettings } from "./settings.js";
+import { renderSync } from "./sync.js";
 
 const bridge = globalThis.suiteStart;
 
@@ -37,6 +38,18 @@ const actions = {
    * call, the page is a secure origin, and a channel that writes the system
    * clipboard in main would be a capability for nothing.
    */
+  async startSync() {
+    await bridge.startSync();
+    await refresh();
+  },
+  async stopSync() {
+    await bridge.stopSync();
+    await refresh();
+  },
+  async setSyncScope(scope) {
+    await bridge.setSyncScope(scope);
+    await refresh();
+  },
   async copyLink(link) {
     try {
       await navigator.clipboard.writeText(link);
@@ -51,6 +64,7 @@ function render(state) {
   renderApps(state, actions);
   renderFiles(state, actions);
   renderSettings(state);
+  renderSync(state, actions);
   document.getElementById("version").textContent = `Suite ${state.version}`;
 
   // The rail carries the one number worth acting on, and hides it at zero so a

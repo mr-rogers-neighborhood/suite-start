@@ -12,6 +12,7 @@ import { desktopCsp, isTrustedSender, resolveProtocolAsset } from "@suite/deskto
 import { app, BrowserWindow, dialog, ipcMain, Menu, net, protocol, shell } from "electron";
 import { appCards, fileCards } from "./cards.js";
 import { type DocumentsFolder, indexDocuments, isInsideDocuments } from "./fileIndex.js";
+import { StartHost } from "./host.js";
 import { type RegistryStore, registryStore } from "./installs.js";
 import { defaultRoots, nodeRegistryFileSystem } from "./nodeFileSystem.js";
 import { RECENT_LIMIT, type RecentsFile, recentsFile } from "./recents.js";
@@ -24,7 +25,13 @@ import {
   type UpdateLookup,
 } from "./reportedUpdate.js";
 import { describeRouteRejection, routeLaunch } from "./route.js";
-import { type LauncherState, type RecentCard, START_CHANGED, START_IPC } from "./shared.js";
+import {
+  type LauncherState,
+  type RecentCard,
+  START_CHANGED,
+  START_IPC,
+  type SyncState,
+} from "./shared.js";
 import { checkForUpdates } from "./updateCheck.js";
 
 /**
@@ -79,6 +86,7 @@ let window: BrowserWindow | null = null;
 let registry: RegistryStore;
 let recents: RecentsFile;
 let dataDirectory = "";
+let syncHost: StartHost | null = null;
 
 /** Files and links handed over before the window exists. */
 const pendingTargets: string[] = [];
@@ -146,6 +154,19 @@ async function discover(): Promise<{
  */
 const checkedUpdates = new Map<string, ReportedUpdate>();
 
+/**
+ * The host's state, or a stopped one before it exists.
+ *
+ * Start is the mailbox, not a member: it holds encrypted frames and the role records that
+ * decide who may write, and it can show that without ever reading a document.
+ */
+function syncState(): SyncState {
+  if (syncHost === null) {
+    return { running: false, scope: "loopback", address: null, port: 8787, workspaces: [] };
+  }
+  return syncHost.state();
+}
+
 async function state(): Promise<LauncherState> {
   const { apps, refused } = await discover();
   const recent = await recents.list();
@@ -198,6 +219,7 @@ async function state(): Promise<LauncherState> {
     files: fileCards(files),
     settings: { dataDirectory, documentsRoot: documentsRoot(), installRoots: roots() },
     version: app.getVersion(),
+    sync: syncState(),
   };
 }
 
@@ -365,6 +387,27 @@ function registerIpc(): void {
    * On demand, one request per app, and nothing is written: the answer is a
    * reading, and installing remains the app's business.
    */
+  onIpc(START_IPC.startSync, async () => {
+    syncHost ??= new StartHost({ dataDir: dataDirectory });
+    await syncHost.start();
+    await broadcast();
+    return syncState();
+  });
+
+  onIpc(START_IPC.stopSync, async () => {
+    await syncHost?.stop();
+    await broadcast();
+    return syncState();
+  });
+
+  onIpc(START_IPC.setSyncScope, async (_event, scope: unknown) => {
+    if (scope !== "loopback" && scope !== "network") return syncState();
+    syncHost ??= new StartHost({ dataDir: dataDirectory });
+    await syncHost.setScope(scope);
+    await broadcast();
+    return syncState();
+  });
+
   onIpc(START_IPC.checkUpdates, async () => {
     const { apps } = await discover();
     await Promise.all(
@@ -444,6 +487,13 @@ if (!gotLock) {
     recents = recentsFile(dataDirectory);
     app.setAppUserModelId("run.suite.start");
 
+    // The mailbox is up whenever Start is: a host that needed a second switch would be a
+    // host nobody turned on. Loopback until somebody widens it.
+    syncHost = new StartHost({ dataDir: dataDirectory });
+    await syncHost.start().catch((error: unknown) => {
+      console.warn("[sync] the host did not start", error);
+    });
+
     // The hub owns `suite://`; every other app is reached through it. An
     // installed package declares the scheme in its desktop entry, an AppImage
     // does not, so ask the platform once when packaged.
@@ -507,6 +557,10 @@ if (!gotLock) {
         void show();
       }
     });
+  });
+
+  app.on("before-quit", () => {
+    void syncHost?.stop();
   });
 
   app.on("window-all-closed", () => {

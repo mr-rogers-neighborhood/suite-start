@@ -6,6 +6,7 @@ import { desktopCsp, isTrustedSender, resolveProtocolAsset } from "@suite/deskto
 import { app, BrowserWindow, dialog, ipcMain, Menu, net, protocol, shell } from "electron";
 import { appCards, fileCards } from "./cards.js";
 import { indexDocuments, isInsideDocuments } from "./fileIndex.js";
+import { StartHost } from "./host.js";
 import { registryStore } from "./installs.js";
 import { defaultRoots, nodeRegistryFileSystem } from "./nodeFileSystem.js";
 import { RECENT_LIMIT, recentsFile } from "./recents.js";
@@ -13,7 +14,7 @@ import { appById, discoverApps } from "./registry.js";
 import { checkFeed } from "./releaseFeed.js";
 import { fromCheck, readReportedUpdate, } from "./reportedUpdate.js";
 import { describeRouteRejection, routeLaunch } from "./route.js";
-import { START_CHANGED, START_IPC } from "./shared.js";
+import { START_CHANGED, START_IPC, } from "./shared.js";
 import { checkForUpdates } from "./updateCheck.js";
 /**
  * Suite Start.
@@ -60,6 +61,7 @@ let window = null;
 let registry;
 let recents;
 let dataDirectory = "";
+let syncHost = null;
 /** Files and links handed over before the window exists. */
 const pendingTargets = [];
 function roots() {
@@ -112,6 +114,18 @@ async function discover() {
  * a cached answer that outlives the question becomes a claim nobody made.
  */
 const checkedUpdates = new Map();
+/**
+ * The host's state, or a stopped one before it exists.
+ *
+ * Start is the mailbox, not a member: it holds encrypted frames and the role records that
+ * decide who may write, and it can show that without ever reading a document.
+ */
+function syncState() {
+    if (syncHost === null) {
+        return { running: false, scope: "loopback", address: null, port: 8787, workspaces: [] };
+    }
+    return syncHost.state();
+}
 async function state() {
     const { apps, refused } = await discover();
     const recent = await recents.list();
@@ -152,6 +166,7 @@ async function state() {
         files: fileCards(files),
         settings: { dataDirectory, documentsRoot: documentsRoot(), installRoots: roots() },
         version: app.getVersion(),
+        sync: syncState(),
     };
 }
 /**
@@ -312,6 +327,25 @@ function registerIpc() {
      * On demand, one request per app, and nothing is written: the answer is a
      * reading, and installing remains the app's business.
      */
+    onIpc(START_IPC.startSync, async () => {
+        syncHost ??= new StartHost({ dataDir: dataDirectory });
+        await syncHost.start();
+        await broadcast();
+        return syncState();
+    });
+    onIpc(START_IPC.stopSync, async () => {
+        await syncHost?.stop();
+        await broadcast();
+        return syncState();
+    });
+    onIpc(START_IPC.setSyncScope, async (_event, scope) => {
+        if (scope !== "loopback" && scope !== "network")
+            return syncState();
+        syncHost ??= new StartHost({ dataDir: dataDirectory });
+        await syncHost.setScope(scope);
+        await broadcast();
+        return syncState();
+    });
     onIpc(START_IPC.checkUpdates, async () => {
         const { apps } = await discover();
         await Promise.all(apps.map(async (entry) => {
@@ -390,6 +424,12 @@ else {
         registry = registryStore(dataDirectory);
         recents = recentsFile(dataDirectory);
         app.setAppUserModelId("run.suite.start");
+        // The mailbox is up whenever Start is: a host that needed a second switch would be a
+        // host nobody turned on. Loopback until somebody widens it.
+        syncHost = new StartHost({ dataDir: dataDirectory });
+        await syncHost.start().catch((error) => {
+            console.warn("[sync] the host did not start", error);
+        });
         // The hub owns `suite://`; every other app is reached through it. An
         // installed package declares the scheme in its desktop entry, an AppImage
         // does not, so ask the platform once when packaged.
@@ -450,6 +490,9 @@ else {
                 void show();
             }
         });
+    });
+    app.on("before-quit", () => {
+        void syncHost?.stop();
     });
     app.on("window-all-closed", () => {
         if (process.platform !== "darwin")
