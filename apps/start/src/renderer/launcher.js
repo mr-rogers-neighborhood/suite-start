@@ -106,6 +106,10 @@ if (typeof bridge !== "object" || bridge === null) {
     }
   });
 
+  // The host's rooms change without Start knowing, so the pane re-reads when it is
+  // opened rather than showing a snapshot from whenever the window last drew.
+  document.getElementById("tab-sync").addEventListener("click", () => void refresh());
+
   // A launch Start initiated changes what is recent, so the window re-reads
   // rather than trusting what it already drew.
   globalThis.addEventListener("focus", () => void refresh());

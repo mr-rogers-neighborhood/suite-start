@@ -120,6 +120,17 @@ const checkedUpdates = new Map();
  * Start is the mailbox, not a member: it holds encrypted frames and the role records that
  * decide who may write, and it can show that without ever reading a document.
  */
+/**
+ * The port the host listens on.
+ *
+ * 8787 unless something says otherwise: a test needs a free port, and two hosts on one
+ * machine would otherwise take turns failing to bind.
+ */
+function syncPort() {
+    const raw = process.env.SUITE_START_SYNC_PORT?.trim();
+    const parsed = raw === undefined ? Number.NaN : Number.parseInt(raw, 10);
+    return Number.isInteger(parsed) && parsed >= 0 && parsed <= 65535 ? parsed : 8787;
+}
 function syncState() {
     if (syncHost === null) {
         return { running: false, scope: "loopback", address: null, port: 8787, workspaces: [] };
@@ -328,7 +339,7 @@ function registerIpc() {
      * reading, and installing remains the app's business.
      */
     onIpc(START_IPC.startSync, async () => {
-        syncHost ??= new StartHost({ dataDir: dataDirectory });
+        syncHost ??= new StartHost({ dataDir: dataDirectory, port: syncPort() });
         await syncHost.start();
         await broadcast();
         return syncState();
@@ -341,7 +352,7 @@ function registerIpc() {
     onIpc(START_IPC.setSyncScope, async (_event, scope) => {
         if (scope !== "loopback" && scope !== "network")
             return syncState();
-        syncHost ??= new StartHost({ dataDir: dataDirectory });
+        syncHost ??= new StartHost({ dataDir: dataDirectory, port: syncPort() });
         await syncHost.setScope(scope);
         await broadcast();
         return syncState();
@@ -426,7 +437,7 @@ else {
         app.setAppUserModelId("run.suite.start");
         // The mailbox is up whenever Start is: a host that needed a second switch would be a
         // host nobody turned on. Loopback until somebody widens it.
-        syncHost = new StartHost({ dataDir: dataDirectory });
+        syncHost = new StartHost({ dataDir: dataDirectory, port: syncPort() });
         await syncHost.start().catch((error) => {
             console.warn("[sync] the host did not start", error);
         });
