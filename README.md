@@ -1,15 +1,17 @@
 # Suite Start
 
-The hub, the web surface and the control plane for Suite. It is a launcher, not a host: apps stay
-separate signed processes, and Start never holds a document.
+The hub for Suite. It is a launcher and a sync supervisor, not a host: apps stay separate signed
+processes, and Start never holds a document. Suite operates no server; a person runs the `suite-sync`
+server on a device they control.
 
 This repository is new and only its first slice exists. Read the rest as the destination, not as
 description:
 
 - **Increment 1 (built):** `@suite/contracts` and `@suite/files` plus the launcher's discovery and
   routing logic.
-- Later: the Electron launcher shell, the static web app, the account dashboard, the control plane
-  moved out of `suite-canvas`, and the shared relay runtime.
+- Later: the Electron launcher shell, supervision of the separate `suite-sync` server, the invite/join
+  and sync-status surfaces, and the shared sync protocol. The hosted web app, control plane and relay
+  are retired, not moved.
 
 ## Two rules
 
