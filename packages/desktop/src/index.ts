@@ -4,4 +4,20 @@ export {
   type ProtocolAssetOptions,
   resolveProtocolAsset,
 } from "./protocol.js";
+export {
+  checkSignedFeed,
+  type FeedCheck,
+  type FeedFetch,
+  type FeedResponse,
+  feedFileFor,
+  feedUrlFromAppUpdateYml,
+  versionFromFeed,
+} from "./releaseFeed.js";
 export { isTrustedSender, originKey } from "./trust.js";
+export {
+  decodeSignature,
+  SUITE_UPDATE_PUBLIC_KEY,
+  UPDATE_SIGNATURE_SUFFIX,
+  updateKeyFingerprint,
+  verifyUpdateManifest,
+} from "./updateSignature.js";

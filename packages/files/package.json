@@ -1,6 +1,6 @@
 {
   "name": "@suite/files",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "description": "File mechanics shared by the suite's apps: base64 snapshots, size ceilings, backup naming and retention planning, archive-path validation, and the fs half under ./node. One package with two entry points, so a renderer importing `.` never pulls `fs`.",
   "type": "module",
   "main": "./dist/index.js",
