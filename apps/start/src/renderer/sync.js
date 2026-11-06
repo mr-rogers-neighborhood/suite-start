@@ -130,9 +130,7 @@ function workspaceBlock(sync) {
 
     const members = el("ul", "sync-members");
     for (const member of workspace.members) {
-      members.append(
-        el("li", null, `${shortId(member.deviceId)} · ${ROLE_WORDS[String(member.role)]}`),
-      );
+      members.append(el("li", null, `${member.name} · ${ROLE_WORDS[String(member.role)]}`));
     }
     if (workspace.members.length === 0) members.append(el("li", null, "no devices yet"));
     item.append(members);

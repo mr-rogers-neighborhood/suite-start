@@ -113,5 +113,6 @@ export interface SyncWorkspace {
 
 export interface SyncMember {
   readonly deviceId: string;
+  readonly name: string;
   readonly role: "owner" | "editor" | "viewer" | null;
 }

@@ -10,6 +10,8 @@ import { deviceIdFromPublicKey } from "@suite/host";
 export type HostScope = "loopback" | "network";
 export interface HostMember {
     readonly deviceId: string;
+    /** What the device called itself. A fingerprint is not something a person can weigh. */
+    readonly name: string;
     readonly role: "owner" | "editor" | "viewer" | null;
 }
 export interface HostWorkspace {
