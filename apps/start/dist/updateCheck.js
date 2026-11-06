@@ -1,61 +1,62 @@
-import { writeFile } from "node:fs/promises";
+import { readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
-import { SUITE_UPDATE_STATE_FILE, } from "@suite/contracts";
+import { SUITE_UPDATE_STATE_FILE, updateAvailable, } from "@suite/contracts";
+import { checkSignedFeed, feedUrlFromAppUpdateYml } from "@suite/desktop";
 /** Ask the feed once, write the report, and say what happened. */
 export async function checkForUpdates(options) {
     const now = options.now ?? (() => new Date());
-    const checkedAt = now().toISOString();
-    if (!options.packaged && options.updater === undefined) {
+    const platform = options.platform ?? process.platform;
+    const feed = options.feed ?? (await recordedFeed(options));
+    if (feed === null) {
+        return { state: null, error: "this build has no update feed", verified: false };
+    }
+    const check = await checkSignedFeed(feed, platform, options.fetch, now);
+    if (!check.verified || check.version === null) {
+        // No report: a card that says "checked" would be claiming an answer nobody gave.
         return {
-            state: {
-                format: "suite.update-state",
-                version: options.version,
-                available: null,
-                checkedAt: null,
-                channel: options.channel,
-            },
-            error: "this build has no update feed",
+            state: null,
+            error: check.reason ?? "the feed could not be verified",
+            verified: false,
         };
     }
+    const state = {
+        format: "suite.update-state",
+        version: options.version,
+        available: updateAvailable({
+            format: "suite.update-state",
+            version: options.version,
+            available: check.version,
+            checkedAt: check.checkedAt,
+            channel: options.channel,
+        })
+            ? check.version
+            : null,
+        checkedAt: check.checkedAt,
+        channel: options.channel,
+    };
+    // The version came from the verified manifest, so the download has something
+    // trustworthy to compare against. The updater still verifies the artifact's hash.
     const updater = options.updater ?? (await loadUpdater());
-    if (updater === null) {
-        return {
-            state: {
-                format: "suite.update-state",
-                version: options.version,
-                available: null,
-                checkedAt: null,
-                channel: options.channel,
-            },
-            error: "electron-updater is not available",
-        };
+    if (updater !== null && state.available !== null) {
+        updater.autoDownload = false;
+        await updater.checkForUpdates().catch((error) => {
+            console.warn("[update] the updater could not check", error);
+        });
     }
-    // Never download unasked: an app that starts pulling a binary at launch is an
-    // app that spends someone's bandwidth on a decision they did not make.
-    updater.autoDownload = false;
+    await writeReport(options.dataDir, state);
+    return { state, error: null, verified: true };
+}
+/** The feed electron-builder recorded beside a packaged app. */
+async function recordedFeed(options) {
+    if (!options.packaged)
+        return null;
+    const resources = options.resourcesPath ?? process.resourcesPath;
     try {
-        const result = await updater.checkForUpdates();
-        const offered = result?.updateInfo.version ?? null;
-        const state = {
-            format: "suite.update-state",
-            version: options.version,
-            available: offered === null ? null : offered,
-            checkedAt,
-            channel: options.channel,
-        };
-        await writeReport(options.dataDir, state);
-        return { state, error: null };
+        const yml = await readFile(join(resources, "app-update.yml"), "utf8");
+        return feedUrlFromAppUpdateYml(yml);
     }
-    catch (error) {
-        const state = {
-            format: "suite.update-state",
-            version: options.version,
-            available: null,
-            checkedAt,
-            channel: options.channel,
-        };
-        await writeReport(options.dataDir, state);
-        return { state, error: error instanceof Error ? error.message : "the check failed" };
+    catch {
+        return null;
     }
 }
 /** The report's path inside an app's data directory. */

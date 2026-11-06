@@ -51,10 +51,16 @@ export function feedUrlFromAppUpdateYml(text) {
  * would verify a file nobody was given. A feed that answers, but with an unsigned or
  * tampered manifest, is the case this exists for, so it is reported rather than
  * treated as "no update".
+ *
+ * This is also the only place a product build reads the network on behalf of an app.
+ * The app hands in a feed and receives an answer; it never holds the capability
+ * itself, which is what lets an app repository assert that its own code makes no
+ * network calls.
  */
-export async function checkSignedFeed(feed, platform, fetch, now = () => new Date(), 
+export async function checkSignedFeed(feed, platform, fetchFeed, now = () => new Date(), 
 /** Overridable so a test can prove the accepting path without the publisher's key. */
 publicKey = SUITE_UPDATE_PUBLIC_KEY) {
+    const fetch = fetchFeed ?? ((url) => globalThis.fetch(url));
     const checkedAt = now().toISOString();
     const base = feed.replace(/\/+$/u, "");
     const file = feedFileFor(platform);
