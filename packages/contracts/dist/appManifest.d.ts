@@ -21,7 +21,7 @@ export declare const suiteSemverSchema: z.ZodString;
 export declare const suiteCapabilitySchema: z.ZodEnum<{
     "document.file": "document.file";
     "document.bundle": "document.bundle";
-    "sync.relay": "sync.relay";
+    sync: "sync";
     attachments: "attachments";
     publish: "publish";
 }>;
@@ -59,7 +59,7 @@ export declare const suiteAppManifestSchema: z.ZodObject<{
     capabilities: z.ZodDefault<z.ZodArray<z.ZodEnum<{
         "document.file": "document.file";
         "document.bundle": "document.bundle";
-        "sync.relay": "sync.relay";
+        sync: "sync";
         attachments: "attachments";
         publish: "publish";
     }>>>;

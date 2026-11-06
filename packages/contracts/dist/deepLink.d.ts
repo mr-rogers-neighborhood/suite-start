@@ -59,8 +59,28 @@ export declare function parseDeepLink(value: string, options?: ParseDeepLinkOpti
  * reference.
  */
 export declare const WORKSPACE_SEGMENT = "workspace";
-/** The link that opens one workspace in an app. */
-export declare function workspaceLink(app: string, workspaceId: string): string | null;
+/**
+ * The link that opens one workspace in an app.
+ *
+ * `name` is the document's file name inside the app's documents folder, which is
+ * the suite's only document identity: `suite://planner/workspace/2026-Q4.planner`.
+ * Naming the file rather than an opaque id is what makes a link resolvable on a
+ * machine the hub has never seen, and what lets the hub build one from its own
+ * index without owning the document.
+ */
+export declare function workspaceLink(app: string, name: string): string | null;
+/**
+ * The document a workspace link names, or null when it is not one.
+ *
+ * The inverse of `workspaceLink`, and the only reading of the shape an app has to
+ * agree on: exactly `workspace/<name>`, for this app. The name is returned as it
+ * was written; whether it names a file this app has is the app's question,
+ * because the extension is the app's own.
+ *
+ * A link carrying a query is refused rather than half honoured: a query would
+ * name a view inside the document, and no app implements one yet.
+ */
+export declare function workspaceTarget(link: string, app: string): string | null;
 /** The prefix an app's links share: `suite://canvas/`. */
 export declare function deepLinkPrefix(app: string): string;
 /**

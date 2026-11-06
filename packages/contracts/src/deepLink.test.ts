@@ -5,6 +5,7 @@ import {
   parseDeepLink,
   WORKSPACE_SEGMENT,
   workspaceLink,
+  workspaceTarget,
 } from "./deepLink.js";
 
 function parsed(value: string, apps?: readonly string[]) {
@@ -140,6 +141,12 @@ describe("workspaceLink", () => {
     expect(workspaceLink("planner", "ws_2")).toBe("suite://planner/workspace/ws_2");
   });
 
+  it("names a document by its file name", () => {
+    expect(workspaceLink("planner", "2026-Q4.planner")).toBe(
+      "suite://planner/workspace/2026-Q4.planner",
+    );
+  });
+
   it("round-trips through the parser", () => {
     const link = workspaceLink("canvas", "ws_1");
     if (link === null) throw new Error("expected a link");
@@ -152,5 +159,39 @@ describe("workspaceLink", () => {
   it("refuses an id that would not survive parsing", () => {
     expect(workspaceLink("canvas", "..")).toBeNull();
     expect(workspaceLink("canvas", "a/b")).toBeNull();
+  });
+});
+
+describe("workspaceTarget", () => {
+  it("reads back the name a link was built from", () => {
+    const link = workspaceLink("budget", "2026.budget");
+    expect(link).not.toBeNull();
+    expect(workspaceTarget(link ?? "", "budget")).toBe("2026.budget");
+  });
+
+  it("reads a link written by hand", () => {
+    expect(workspaceTarget("suite://planner/workspace/2026-Q4.planner", "planner")).toBe(
+      "2026-Q4.planner",
+    );
+  });
+
+  it("refuses a link that names another app", () => {
+    expect(workspaceTarget("suite://canvas/workspace/a.canvas", "budget")).toBeNull();
+  });
+
+  it("refuses anything that is not exactly workspace and one name", () => {
+    expect(workspaceTarget("suite://canvas/", "canvas")).toBeNull();
+    expect(workspaceTarget("suite://canvas/workspace", "canvas")).toBeNull();
+    expect(workspaceTarget("suite://canvas/workspace/a/b", "canvas")).toBeNull();
+    expect(workspaceTarget("suite://canvas/board/a", "canvas")).toBeNull();
+  });
+
+  it("refuses a query rather than ignoring it", () => {
+    expect(workspaceTarget("suite://canvas/workspace/a.canvas?card=c1", "canvas")).toBeNull();
+  });
+
+  it("refuses a climb and a foreign scheme", () => {
+    expect(workspaceTarget("suite://canvas/workspace/..", "canvas")).toBeNull();
+    expect(workspaceTarget("https://canvas/workspace/a.canvas", "canvas")).toBeNull();
   });
 });

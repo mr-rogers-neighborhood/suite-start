@@ -33,6 +33,7 @@ export {
   type SuiteDeepLink,
   WORKSPACE_SEGMENT,
   workspaceLink,
+  workspaceTarget,
 } from "./deepLink.js";
 export {
   deploymentAllows,

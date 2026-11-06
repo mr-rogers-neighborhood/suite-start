@@ -12,7 +12,7 @@ const canvasManifest = {
   fileExtensions: ["canvas"],
   protocols: ["suite-canvas"],
   update: { feed: "https://releases.suite.run/canvas/stable" },
-  capabilities: ["document.file", "sync.relay", "attachments"],
+  capabilities: ["document.file", "sync", "attachments"],
 };
 
 describe("parseAppManifest", () => {

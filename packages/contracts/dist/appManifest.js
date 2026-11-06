@@ -26,7 +26,7 @@ export const suiteSemverSchema = z.string().regex(SEMVER_PATTERN, "expected a se
 export const suiteCapabilitySchema = z.enum([
     "document.file",
     "document.bundle",
-    "sync.relay",
+    "sync",
     "attachments",
     "publish",
 ]);
