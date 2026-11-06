@@ -1,0 +1,37 @@
+# The hub's own package.
+#
+# Start is installed like any other app, so `pnpm package:dir` has to produce a
+# binary a person can run. It ships no `suite.app.json`: the hub is not an app the
+# hub lists, and a manifest beside this binary would only invite it to.
+appId: run.suite.start
+productName: Suite Start
+executableName: suite-start
+copyright: Copyright © Suite contributors
+
+directories:
+  output: release
+  buildResources: build
+
+files:
+  - dist/**/*
+  - package.json
+
+asar: true
+
+# The same fuses the apps set: without them a modified binary can be told to run
+# any Node script.
+electronFuses:
+  runAsNode: false
+  enableCookieEncryption: true
+  enableNodeOptionsEnvironmentVariable: false
+  enableNodeCliInspectArguments: false
+  enableEmbeddedAsarIntegrityValidation: true
+  onlyLoadAppFromAsar: true
+
+linux:
+  target:
+    - AppImage
+    - deb
+  category: Utility
+  synopsis: The Suite hub
+  description: Discovers installed Suite apps, opens their documents and routes suite:// links.

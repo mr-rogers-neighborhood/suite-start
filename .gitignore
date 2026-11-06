@@ -11,3 +11,6 @@ coverage/
 
 # Playwright rewrites its own output on every run.
 e2e/test-results/
+
+# electron-builder output. The staged copies a run launches live in suite-dev/.dev.
+apps/*/release/

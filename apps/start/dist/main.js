@@ -30,6 +30,13 @@ import { START_CHANGED, START_IPC, } from "./shared.js";
 // Before anything reads a path. `userData` is derived from the application name,
 // and without this it is the scoped package name, `@suite/start`.
 app.setName("Suite Start");
+// A second profile needs its own Chromium directory: the single-instance lock
+// lives in `userData`, so two hubs in one folder would close each other. This is
+// also what lets a test run a hub without touching the real one.
+const userDataOverride = process.env.SUITE_START_USER_DATA?.trim();
+if (userDataOverride !== undefined && userDataOverride.length > 0) {
+    app.setPath("userData", userDataOverride);
+}
 function appDir() {
     return app.getAppPath();
 }

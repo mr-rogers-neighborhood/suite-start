@@ -10,6 +10,7 @@
   },
   "scripts": {
     "build": "tsc -p tsconfig.build.json && node scripts/stage.mjs",
+    "package:dir": "pnpm build && electron-builder --dir",
     "start": "electron .",
     "typecheck": "tsc --noEmit -p tsconfig.json"
   },
@@ -28,5 +29,10 @@
     "url": "git+https://github.com/mr-rogers-neighborhood/suite-start.git",
     "directory": "apps/start"
   },
-  "main": "./dist/main.js"
+  "main": "./dist/main.js",
+  "author": {
+    "name": "Suite contributors",
+    "email": "maintainers@suite.run"
+  },
+  "license": "MIT"
 }
