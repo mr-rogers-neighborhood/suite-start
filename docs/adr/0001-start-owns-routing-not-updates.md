@@ -1,0 +1,41 @@
+# ADR-0001: Start owns routing, not updates
+
+- Status: accepted
+- Date: 2026-11-06
+
+## Context
+
+Suite Start is the hub: it discovers the apps on a machine, launches one, routes `suite://` links and
+files, and indexes every app's documents in one place. Its stated purpose also included a "toolbox for
+updating and managing your applications", and the first design had Start read a release catalog and
+offer updates from it.
+
+Electron apps update themselves. `electron-updater` reads a signed manifest, downloads the artifact and
+replaces the application, and it does so wherever the app is installed. If Start also updated apps,
+there would be two programs entitled to write the same file, two trust decisions about the same
+manifest, and a race the first time both ran.
+
+## Decision
+
+**Start installs; apps update; Start asks and reads, never performs.**
+
+- An app owns its own bytes and its own update feed. It updates itself.
+- Start records where it last saw an executable, re-checks that path on launch, and re-reads every
+  manifest from disk each time it lists. It never writes into an app's directory.
+- Start shows what an app reports about itself. An app's update state (current version, whether a newer
+  one exists, when it last checked) is written by the app into its own user data directory, and Start
+  reads that file.
+- Start makes no network request of its own, so the sentence in its Settings pane stays true.
+- "Update" in Start opens the app, which updates on launch.
+- Installing an app that is not on the machine at all is Start's job, because there is no app yet to
+  own its own bytes. That is the installer, and it is a later milestone.
+
+## Consequences
+
+- There is one writer per binary and one trust anchor per app: the manifest the app already verifies.
+- Start's view of a version is as fresh as the app's last run. It says when it last checked rather than
+  implying a live answer.
+- A moved or renamed binary shows as missing rather than launching something stale, because the path is
+  re-checked and the manifest re-read rather than cached.
+- The installer is the only place Start places files, which keeps the rule easy to state and easy to
+  test: everything before it is read-only.
