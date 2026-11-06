@@ -1,5 +1,8 @@
 import { el } from "./format.js";
 
+/** Where "Support Suite" goes. One line, so it can point at whatever page should take money. */
+const SUPPORT_URL = "https://github.com/mr-rogers-neighborhood/suite-start";
+
 /** A catalog is a path, a refusal, or the honest absence of one. */
 function catalogLine(catalog) {
   if (catalog.state === "configured") return `Read from ${catalog.path}. Never fetched.`;
@@ -24,6 +27,17 @@ export function renderSettings(state) {
   pair("Catalog", catalogLine(state.catalog), "catalog-value");
   pair("Deployment", "Not configured. This build makes no network request.");
   pair("Version", state.version);
+
+  // The one ask in the product: a URL, no account, nothing gated. The window
+  // handler opens `https` in the system browser, so this is a plain link and not
+  // a channel.
+  const support = el("dd");
+  const link = el("a", null, "Support Suite…");
+  link.href = SUPPORT_URL;
+  link.rel = "noreferrer";
+  link.target = "_blank";
+  support.append(link);
+  list.append(el("dt", null, "Support"), support);
 
   const roots = el("dd");
   const rootList = el("ul");
