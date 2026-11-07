@@ -14,7 +14,7 @@
 # them — see docs/how-to/package.md.
 
 pkgname=suite-start-bin
-pkgver=0.3.3
+pkgver=0.3.4
 pkgrel=1
 pkgdesc='The Suite hub: installs, updates and opens the Suite apps'
 arch=('x86_64')
@@ -65,12 +65,14 @@ package() {
   install -dm755 "$pkgdir/opt/suite-start"
   cp -a squashfs-root/. "$pkgdir/opt/suite-start/"
 
-  # AppImage runtime artefacts: the wrapper script, the relative desktop entry, and
-  # the copy of `/usr/share` the image carries (its icons are installed below, under
-  # the names the rest of the system uses). None of them means anything inside /opt.
+  # AppImage runtime artefacts: the wrapper script, the relative desktop entry, the
+  # top-level icon symlink that points into the `usr` tree (and would dangle once that is
+  # gone), and the copy of `/usr/share` the image carries — its icons are installed below,
+  # under the names the rest of the system uses. None of them means anything inside /opt.
   rm -rf "$pkgdir/opt/suite-start/AppRun" \
          "$pkgdir/opt/suite-start/.DirIcon" \
          "$pkgdir/opt/suite-start/suite-start.desktop" \
+         "$pkgdir/opt/suite-start/suite-start.png" \
          "$pkgdir/opt/suite-start/usr"
 
   # The image's own directories are 0700, and `cp -a` reproduces a mode faithfully —
@@ -102,7 +104,9 @@ Exec=/opt/suite-start/suite-start %U
 Terminal=false
 Type=Application
 Icon=suite-start
-StartupWMClass=Suite Start
+# What the binary actually reports: measured as "suite-start", "suite-start". An entry
+# claiming the product name matches no window, so a panel cannot group the app under it.
+StartupWMClass=suite-start
 MimeType=x-scheme-handler/suite;
 Categories=Utility;
 EOF

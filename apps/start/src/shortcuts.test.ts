@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { shortcutFilename, shortcutIconPath, shortcutPath, shortcutText } from "./shortcuts.js";
+import {
+  shortcutFilename,
+  shortcutIconPath,
+  shortcutPath,
+  shortcutText,
+  wmClassFor,
+} from "./shortcuts.js";
 
 const planner = {
   id: "planner",
@@ -39,8 +45,9 @@ describe("shortcutText", () => {
     expect(text).toContain(`Exec="${planner.executable}" %U`);
     expect(text).toContain("Icon=suite-planner");
     expect(text).toContain("MimeType=application/x-suite-planner;");
-    // A panel groups the window under this entry using the class Electron reports.
-    expect(text).toContain("StartupWMClass=Suite Planner");
+    // Measured: the installed Canvas AppImage reports "suite-canvas", not "Suite Canvas".
+    expect(text).toContain("StartupWMClass=suite-planner");
+    expect(text).not.toContain("StartupWMClass=Suite Planner");
   });
 
   it("does not claim a file handler for an app that opens nothing", () => {
@@ -61,5 +68,16 @@ describe("shortcutText", () => {
   it("escapes a quote rather than ending the argument early", () => {
     const text = shortcutText({ ...planner, executable: '/home/me/odd"name.AppImage' });
     expect(text).toContain('Exec="/home/me/odd\\"name.AppImage" %U');
+  });
+});
+
+describe("wmClassFor", () => {
+  it("is the executableName each app's packaging sets, which is what its window reports", () => {
+    // Measured from the installed Canvas AppImage: "suite-canvas", "Suite-canvas".
+    expect(wmClassFor("canvas")).toBe("suite-canvas");
+    expect(wmClassFor("planner")).toBe("suite-planner");
+    expect(wmClassFor("budget")).toBe("suite-budget");
+    // And the hub's own entry declares the same shape.
+    expect(wmClassFor("start")).toBe("suite-start");
   });
 });

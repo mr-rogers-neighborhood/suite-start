@@ -84,7 +84,7 @@ export function shortcutText(input: ShortcutInput): string {
     `Icon=${input.iconName}`,
     "Terminal=false",
     "Categories=Utility;Office;",
-    `StartupWMClass=${input.name}`,
+    `StartupWMClass=${wmClassFor(input.id)}`,
   ];
 
   // Only an app that opens files should claim a handler; otherwise a double-click would
@@ -99,5 +99,18 @@ export function shortcutText(input: ShortcutInput): string {
 
 /** The icon name one app's shortcut uses. */
 export function shortcutIconName(id: string): string {
+  return `suite-${id}`;
+}
+
+/**
+ * The `WM_CLASS` a bundled app actually reports.
+ *
+ * Measured, not assumed. The installed Canvas AppImage announces
+ * `WM_CLASS(STRING) = "suite-canvas", "Suite-canvas"` — the `executableName` its
+ * `electron-builder.yml` sets, which is `suite-` plus the app id, not the product name and
+ * not the versioned file name. An entry claiming `Suite Canvas` matches no window, so a
+ * panel cannot group the running app under it and draws it on its own.
+ */
+export function wmClassFor(id: string): string {
   return `suite-${id}`;
 }

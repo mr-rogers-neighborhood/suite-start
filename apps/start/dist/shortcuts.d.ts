@@ -44,4 +44,14 @@ export declare function shortcutIconPath(platform: string, home: string, iconNam
 export declare function shortcutText(input: ShortcutInput): string;
 /** The icon name one app's shortcut uses. */
 export declare function shortcutIconName(id: string): string;
+/**
+ * The `WM_CLASS` a bundled app actually reports.
+ *
+ * Measured, not assumed. The installed Canvas AppImage announces
+ * `WM_CLASS(STRING) = "suite-canvas", "Suite-canvas"` — the `executableName` its
+ * `electron-builder.yml` sets, which is `suite-` plus the app id, not the product name and
+ * not the versioned file name. An entry claiming `Suite Canvas` matches no window, so a
+ * panel cannot group the running app under it and draws it on its own.
+ */
+export declare function wmClassFor(id: string): string;
 //# sourceMappingURL=shortcuts.d.ts.map
