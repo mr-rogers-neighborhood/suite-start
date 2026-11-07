@@ -1,0 +1,12 @@
+# What `electron-builder --linux AppImage` writes, copied from a Canvas build so the
+# parser is tested against the file's real shape rather than a remembered one. The
+# hashes and size belong to that build and no longer matter.
+version: 0.1.0
+files:
+  - url: suite-canvas-0.1.0-x86_64.AppImage
+    sha512: dmuphTeY3G3RNc7+S0bRU3Me//dFxNoBSKMsdOGlNIBxe/tz0f1IoBv3mYOAP//cZ3qEVWCO0PNK0aLSl+J5bQ==
+    size: 153291139
+    blockMapSize: 162199
+path: suite-canvas-0.1.0-x86_64.AppImage
+sha512: dmuphTeY3G3RNc7+S0bRU3Me//dFxNoBSKMsdOGlNIBxe/tz0f1IoBv3mYOAP//cZ3qEVWCO0PNK0aLSl+J5bQ==
+releaseDate: "2026-11-06T19:29:45.218Z"

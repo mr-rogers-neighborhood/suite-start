@@ -5,7 +5,9 @@ export {
   resolveProtocolAsset,
 } from "./protocol.js";
 export {
+  artifactFromFeed,
   checkSignedFeed,
+  type FeedArtifact,
   type FeedCheck,
   type FeedFetch,
   type FeedResponse,
