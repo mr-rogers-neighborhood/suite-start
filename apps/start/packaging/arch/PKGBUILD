@@ -14,7 +14,7 @@
 # them — see docs/how-to/package.md.
 
 pkgname=suite-start-bin
-pkgver=0.3.1
+pkgver=0.3.2
 pkgrel=1
 pkgdesc='The Suite hub: installs, updates and opens the Suite apps'
 arch=('x86_64')
@@ -73,6 +73,15 @@ package() {
          "$pkgdir/opt/suite-start/suite-start.desktop" \
          "$pkgdir/opt/suite-start/usr"
 
+  # The image's own directories are 0700, and `cp -a` reproduces a mode faithfully —
+  # including on `/opt/suite-start` itself. A root-owned directory the user cannot
+  # traverse makes every file inside it report as missing, which is exactly how 0.3.1
+  # installed and then refused to start: "could not find the program".
+  #
+  # Files keep the modes the image gave them (the binary is already 0755), so only
+  # directories need normalising.
+  find "$pkgdir/opt/suite-start" -type d -exec chmod 755 {} +
+
   # Electron's sandbox helper must be root-owned and setuid, or the renderer sandbox
   # is unavailable and Chromium needs --no-sandbox. A package can do this properly,
   # which is one thing it does better than the AppImage.
@@ -81,6 +90,7 @@ package() {
   # The icons the AppImage already carries, at every size it ships.
   install -d "$pkgdir/usr/share/icons"
   cp -a squashfs-root/usr/share/icons/. "$pkgdir/usr/share/icons/"
+  find "$pkgdir/usr/share/icons" -type d -exec chmod 755 {} +
 
   install -dm755 "$pkgdir/usr/share/applications"
   cat > "$pkgdir/usr/share/applications/suite-start.desktop" <<EOF

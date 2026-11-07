@@ -326,6 +326,14 @@ async function state() {
     };
 }
 /**
+ * The variable that tells an app it was started by the hub.
+ *
+ * An app launched this way leaves its own updating alone, because Start is the process
+ * that downloads, verifies and replaces it (D45). A copy run from a folder gets no such
+ * promise and keeps its own updater — which is what the release notes have always said.
+ */
+const MANAGED_BY_ENV = "SUITE_MANAGED_BY";
+/**
  * Launch failures, by app id, since the window opened.
  *
  * A launch is not an install, so this is not `installProgress`: it is a sentence the card
@@ -350,6 +358,9 @@ function spawnExecutable(executable, argv, appId) {
     const child = spawn(executable, [...argv], {
         detached: true,
         stdio: ["ignore", "ignore", "pipe"],
+        // The app is being started by the thing that also updates it. Only a launch Start
+        // performs carries this; a desktop entry or a shell run does not.
+        env: appId === undefined ? process.env : { ...process.env, [MANAGED_BY_ENV]: "start" },
     });
     let stderr = "";
     child.stderr?.setEncoding("utf8");
@@ -377,7 +388,11 @@ function spawnExecutable(executable, argv, appId) {
             spawn(executable, [...argv], {
                 detached: true,
                 stdio: "ignore",
-                env: { ...process.env, APPIMAGE_EXTRACT_AND_RUN: "1" },
+                env: {
+                    ...process.env,
+                    APPIMAGE_EXTRACT_AND_RUN: "1",
+                    ...(appId === undefined ? {} : { [MANAGED_BY_ENV]: "start" }),
+                },
             }).unref();
             child.unref();
             return;

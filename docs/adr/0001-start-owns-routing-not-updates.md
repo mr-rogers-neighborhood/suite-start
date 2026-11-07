@@ -1,7 +1,7 @@
 # ADR-0001: Start owns routing, not updates
 
 - Status: accepted; amended 2026-11-06 (the hub may read a feed when asked) and 2026-11-07
-  (Start installs **and** replaces — D45)
+  (Start installs **and** replaces — D45, and the managed launch that makes it one writer)
 - Date: 2026-11-06
 
 ## Context
@@ -103,7 +103,26 @@ What it changes:
 - A card's version answer comes from Start's own read of the signed feed; the app's `update-state.json`
   is a second opinion shown when the feed is silent.
 
-**Not yet landed.** An app Start installed is meant to be launched with `SUITE_MANAGED_BY=start` and to
-skip its own check while still writing its report. That flag is the next step, so until it lands the two
-updaters can still race on a machine where both are running. The amendment is dated from the decision,
-not from the flag.
+## Amendment (2026-11-07, second): one writer, enforced rather than intended
+
+The decision above says Start replaces what it installed. Until now nothing stopped the app doing it
+too, so on a machine where both were running the rule was a wish. It is now enforced:
+
+- **Start launches a managed install with `SUITE_MANAGED_BY=start`** in the child's environment. Only a
+  launch Start performs carries it. A desktop entry, a shell, or a file manager does not.
+- **An app that sees it skips its own check entirely** — no feed read, no `electron-updater` call — and
+  writes `update-state.json` anyway, with `checkedAt: null` and nothing offered. The hub then reads
+  "not checked" rather than an answer from weeks ago. Why it skipped is in the app's own log.
+- **A copy run straight from a folder gets no such variable** and keeps its own updater. That is the
+  promise the release notes make to anyone who built the app themselves.
+
+**Why the report has no "reason" field.** `suite.update-state` is `.strict()`, so adding one means a
+contract version bump, and a bump means all three apps re-pin `@suite/contracts` at a new tag — a
+coordinated release for a string no surface reads. The hub derives what it shows from its own signed
+catalogue; the app's report is the second opinion for apps Start did _not_ install, and "no time, no
+version" is exactly as informative as the current schema can be. The field can arrive with the next
+contract bump that is happening for its own reasons.
+
+**What this does not cover.** An app installed by a package manager is not Start's to launch, so it
+keeps its own updater and may need root to use it. The suite ships apps as AppImages precisely so that
+case does not arise — see `docs/how-to/package.md`.
