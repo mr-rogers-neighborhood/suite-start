@@ -191,11 +191,11 @@ importers:
         specifier: workspace:*
         version: link:../../packages/desktop
       '@suite/host':
-        specifier: git+https://github.com/mr-rogers-neighborhood/suite-sync.git#v0.11.2&path:/packages/host
-        version: https://codeload.github.com/mr-rogers-neighborhood/suite-sync/tar.gz/2d52e5621ecc2e65042b6b5d34c0583748f925e0#path:/packages/host(@suite/sync@https://codeload.github.com/mr-rogers-neighborhood/suite-sync/tar.gz/2d52e5621ecc2e65042b6b5d34c0583748f925e0#path:/packages/protocol)
+        specifier: git+https://github.com/mr-rogers-neighborhood/suite-sync.git#v0.11.3&path:/packages/host
+        version: https://codeload.github.com/mr-rogers-neighborhood/suite-sync/tar.gz/e7a9edcf8a88aa804471465dfeebb4aff317d2f6#path:/packages/host(@suite/sync@https://codeload.github.com/mr-rogers-neighborhood/suite-sync/tar.gz/e7a9edcf8a88aa804471465dfeebb4aff317d2f6#path:/packages/protocol)
       '@suite/sync':
-        specifier: git+https://github.com/mr-rogers-neighborhood/suite-sync.git#v0.11.2&path:/packages/protocol
-        version: https://codeload.github.com/mr-rogers-neighborhood/suite-sync/tar.gz/2d52e5621ecc2e65042b6b5d34c0583748f925e0#path:/packages/protocol
+        specifier: git+https://github.com/mr-rogers-neighborhood/suite-sync.git#v0.11.3&path:/packages/protocol
+        version: https://codeload.github.com/mr-rogers-neighborhood/suite-sync/tar.gz/e7a9edcf8a88aa804471465dfeebb4aff317d2f6#path:/packages/protocol
       electron-updater:
         specifier: ^6.6.2
         version: 6.8.11(supports-color@7.2.0)
@@ -540,15 +540,15 @@ packages:
     resolution: {integrity: sha512-t09vSN3MdfsyCHoFcTRCH/iUtG7OJ0CsjzB8cjAmKc/va/kIgeDI/TxsigdncE/4be734m0cvIYwNaV4i2XqAw==}
     engines: {node: '>=10'}
 
-  '@suite/host@https://codeload.github.com/mr-rogers-neighborhood/suite-sync/tar.gz/2d52e5621ecc2e65042b6b5d34c0583748f925e0#path:/packages/host':
-    resolution: {gitHosted: true, integrity: sha512-0huhKlT1yfIWmZVr2M/vHZBzcsVj7IxwK23v5ceoe3Yqo/kfmsRmESYTJRj513gU0aCxpYxMc9C28+gtTBEv7Q==, path: /packages/host, tarball: https://codeload.github.com/mr-rogers-neighborhood/suite-sync/tar.gz/2d52e5621ecc2e65042b6b5d34c0583748f925e0}
-    version: 0.11.2
+  '@suite/host@https://codeload.github.com/mr-rogers-neighborhood/suite-sync/tar.gz/e7a9edcf8a88aa804471465dfeebb4aff317d2f6#path:/packages/host':
+    resolution: {gitHosted: true, integrity: sha512-2zPd2mkhJIJUK+w2d5fSmH/o9jTV64AB7oTqmvTAleOiacV7Mr4I0bJGq5Tn2L1eg43JVNpEsTEf05rFfb3LcA==, path: /packages/host, tarball: https://codeload.github.com/mr-rogers-neighborhood/suite-sync/tar.gz/e7a9edcf8a88aa804471465dfeebb4aff317d2f6}
+    version: 0.11.3
     peerDependencies:
-      '@suite/sync': ^0.11.2
+      '@suite/sync': ^0.11.3
 
-  '@suite/sync@https://codeload.github.com/mr-rogers-neighborhood/suite-sync/tar.gz/2d52e5621ecc2e65042b6b5d34c0583748f925e0#path:/packages/protocol':
-    resolution: {gitHosted: true, integrity: sha512-0huhKlT1yfIWmZVr2M/vHZBzcsVj7IxwK23v5ceoe3Yqo/kfmsRmESYTJRj513gU0aCxpYxMc9C28+gtTBEv7Q==, path: /packages/protocol, tarball: https://codeload.github.com/mr-rogers-neighborhood/suite-sync/tar.gz/2d52e5621ecc2e65042b6b5d34c0583748f925e0}
-    version: 0.11.2
+  '@suite/sync@https://codeload.github.com/mr-rogers-neighborhood/suite-sync/tar.gz/e7a9edcf8a88aa804471465dfeebb4aff317d2f6#path:/packages/protocol':
+    resolution: {gitHosted: true, integrity: sha512-2zPd2mkhJIJUK+w2d5fSmH/o9jTV64AB7oTqmvTAleOiacV7Mr4I0bJGq5Tn2L1eg43JVNpEsTEf05rFfb3LcA==, path: /packages/protocol, tarball: https://codeload.github.com/mr-rogers-neighborhood/suite-sync/tar.gz/e7a9edcf8a88aa804471465dfeebb4aff317d2f6}
+    version: 0.11.3
 
   '@szmarczak/http-timer@4.0.6':
     resolution: {integrity: sha512-4BAffykYOgO+5nzBWYwE3W90sBgLJoUPRWWcL8wlyiM8IB8ipJz3UMJ9KXQd1RKQXpKp8Tutn80HZtWsu2u76w==}
@@ -2067,15 +2067,15 @@ snapshots:
 
   '@sindresorhus/is@4.6.0': {}
 
-  '@suite/host@https://codeload.github.com/mr-rogers-neighborhood/suite-sync/tar.gz/2d52e5621ecc2e65042b6b5d34c0583748f925e0#path:/packages/host(@suite/sync@https://codeload.github.com/mr-rogers-neighborhood/suite-sync/tar.gz/2d52e5621ecc2e65042b6b5d34c0583748f925e0#path:/packages/protocol)':
+  '@suite/host@https://codeload.github.com/mr-rogers-neighborhood/suite-sync/tar.gz/e7a9edcf8a88aa804471465dfeebb4aff317d2f6#path:/packages/host(@suite/sync@https://codeload.github.com/mr-rogers-neighborhood/suite-sync/tar.gz/e7a9edcf8a88aa804471465dfeebb4aff317d2f6#path:/packages/protocol)':
     dependencies:
-      '@suite/sync': https://codeload.github.com/mr-rogers-neighborhood/suite-sync/tar.gz/2d52e5621ecc2e65042b6b5d34c0583748f925e0#path:/packages/protocol
+      '@suite/sync': https://codeload.github.com/mr-rogers-neighborhood/suite-sync/tar.gz/e7a9edcf8a88aa804471465dfeebb4aff317d2f6#path:/packages/protocol
       ws: 8.22.1
     transitivePeerDependencies:
       - bufferutil
       - utf-8-validate
 
-  '@suite/sync@https://codeload.github.com/mr-rogers-neighborhood/suite-sync/tar.gz/2d52e5621ecc2e65042b6b5d34c0583748f925e0#path:/packages/protocol':
+  '@suite/sync@https://codeload.github.com/mr-rogers-neighborhood/suite-sync/tar.gz/e7a9edcf8a88aa804471465dfeebb4aff317d2f6#path:/packages/protocol':
     dependencies:
       '@noble/ciphers': 2.1.1
       '@noble/hashes': 2.4.0
