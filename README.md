@@ -4,14 +4,33 @@ The hub for Suite. It is a launcher and a sync supervisor, not a host: apps stay
 processes, and Start never holds a document. Suite operates no server; a person runs the `suite-sync`
 server on a device they control.
 
-This repository is new and only its first slice exists. Read the rest as the destination, not as
-description:
+## Install it
 
-- **Increment 1 (built):** `@suite/contracts` and `@suite/files` plus the launcher's discovery and
-  routing logic.
-- Later: the Electron launcher shell, supervision of the separate `suite-sync` server, the invite/join
-  and sync-status surfaces, and the shared sync protocol. The hosted web app, control plane and relay
-  are retired, not moved.
+Suite Start is the one app you fetch by hand; every other app in the suite arrives through it.
+
+Take `suite-start-<version>-x86_64.AppImage` from the
+[latest release](https://github.com/mr-rogers-neighborhood/suite-start/releases/latest), then:
+
+```sh
+chmod +x suite-start-0.3.0-x86_64.AppImage
+./suite-start-0.3.0-x86_64.AppImage
+```
+
+An AppImage needs FUSE 2, which many distributions no longer install by default: `fuse2` on Arch,
+`libfuse2` on Debian or Ubuntu, `fuse` on Fedora. Without it you get `dlopen(): error loading
+libfuse.so.2`; `--appimage-extract-and-run` starts it anyway.
+
+[Installing Suite Start](docs/how-to/install.md) has the checksum step, the error messages worth
+recognising, and what each card state means. Everything below describes the code rather than the
+download.
+
+## What exists
+
+- **Built:** the shared packages (`@suite/contracts`, `@suite/files`), the Electron launcher shell with
+  discovery, install, routing and the sync-status surfaces, and supervision of the separate
+  `suite-sync` server.
+- **Later:** the invite/join flow, person keys, and the shared sync protocol's remaining surface. The
+  hosted web app, control plane and relay are retired, not moved.
 
 ## Two rules
 
@@ -100,8 +119,11 @@ than the OAuth token `gh auth` issues.
 ## Releasing
 
 1. `pnpm check` — green, including the `dist` drift check.
-2. `git tag vX.Y.Z && git push origin main --tags`.
-3. Update the two specifiers in the consuming repository.
+2. From `suite-dev`: `node scripts/release.mjs start --tag start-vX.Y.Z --publish`. It runs that gate
+   itself, builds the AppImage, signs the feed and uploads the three files.
+3. The `start-` prefix matters: this repository's `v0.1.0`–`v0.7.0` tags are the **shared-package**
+   line the apps pin, and a hub release must not land on one of them.
+4. Update the two specifiers in the consuming repository when the packages change.
 
 ## Working on the whole suite
 
