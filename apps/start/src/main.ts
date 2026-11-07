@@ -786,6 +786,43 @@ async function installOne(id: string): Promise<void> {
   }
 }
 
+/**
+ * Bring the sync host up, off the startup path, and say so if it cannot.
+ *
+ * The port is the interesting part: only one process can hold 8787, so a second launcher — or
+ * the packaged hub already running from the application menu — would otherwise take the
+ * launcher down with it. A later port is as good as the first, because the address is written
+ * into the hub's report and apps read it from there rather than assuming.
+ */
+const SYNC_PORT_ATTEMPTS = 10;
+
+async function startRefreshHost(): Promise<void> {
+  for (let attempt = 0; attempt < SYNC_PORT_ATTEMPTS; attempt += 1) {
+    const port = syncPort() + attempt;
+    const host = new StartHost({ dataDir: dataDirectory, port });
+    try {
+      await host.start();
+      syncHost = host;
+      break;
+    } catch (error) {
+      if (attempt === SYNC_PORT_ATTEMPTS - 1) {
+        console.warn(`[sync] the host could not start on ${syncPort0Label()}:`, error);
+        return;
+      }
+    }
+  }
+
+  // An app that reads this at launch should find today's answer.
+  await reportHub().catch((error: unknown) => {
+    console.warn("[sync] could not report the hub's address", error);
+  });
+  await broadcast();
+}
+
+function syncPort0Label(): string {
+  return `${syncPort()}–${syncPort() + SYNC_PORT_ATTEMPTS - 1}`;
+}
+
 /** Read the feeds again and redraw, which is what the menu item and the button both do. */
 async function refreshAndBroadcast(): Promise<void> {
   for (const [id, progress] of installProgress) {
@@ -1086,17 +1123,6 @@ if (!gotLock) {
     recents = recentsFile(dataDirectory);
     app.setAppUserModelId("run.suite.start");
 
-    // The mailbox is up whenever Start is: a host that needed a second switch would be a
-    // host nobody turned on. Loopback until somebody widens it.
-    syncHost = new StartHost({ dataDir: dataDirectory, port: syncPort() });
-    await syncHost.start().catch((error: unknown) => {
-      console.warn("[sync] the host did not start", error);
-    });
-    // Before the window opens: an app that reads this at launch should find today's answer.
-    await reportHub().catch((error: unknown) => {
-      console.warn("[sync] could not report the hub's address", error);
-    });
-
     // The hub owns `suite://`; every other app is reached through it. An
     // installed package declares the scheme in its desktop entry, an AppImage
     // does not, so ask the platform once when packaged.
@@ -1148,8 +1174,13 @@ if (!gotLock) {
       ]),
     );
 
+    // The window first, the mailbox second. A host that cannot bind — a second Start, or the
+    // packaged copy already running — used to stop startup dead: no window, no error, just a
+    // launcher that never appeared.
     window = createWindow();
     await show();
+
+    void startRefreshHost();
 
     // The window is up before any feed is read, so a slow network delays a card rather
     // than the launcher. What arrives is broadcast, and the cards redraw.
