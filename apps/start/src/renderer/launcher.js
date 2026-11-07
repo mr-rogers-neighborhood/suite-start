@@ -33,6 +33,13 @@ const actions = {
     await bridge.removeApp(id);
     await refresh();
   },
+  async uninstall(id) {
+    await bridge.uninstallApp(id);
+    await refresh();
+  },
+  async reveal(id) {
+    await bridge.revealApp(id);
+  },
   async openRecent(recent) {
     await bridge.launch(recent.appId);
     await refresh();
@@ -73,9 +80,21 @@ const actions = {
 /** The last thing main said, so a progress event can redraw the cards alone. */
 let lastState = null;
 
+/** The Apps filter, so a list of nine still behaves like a list of three. */
+let appFilter = "";
+
+function visibleApps(state) {
+  if (appFilter.trim().length === 0) return state;
+  const wanted = appFilter.trim().toLowerCase();
+  return {
+    ...state,
+    apps: state.apps.filter((app) => app.name.toLowerCase().includes(wanted)),
+  };
+}
+
 function render(state) {
   lastState = state;
-  renderApps(state, actions);
+  renderApps(visibleApps(state), actions);
   renderFiles(state, actions);
   renderSettings(state);
   renderSync(state, actions);
@@ -98,15 +117,25 @@ if (typeof bridge !== "object" || bridge === null) {
   document.querySelector(".content").textContent =
     "Start's shell did not load, so this window cannot list anything. Restart Suite.";
 } else {
-  installRail();
+  const rail = installRail();
   bridge.onChanged?.(render);
+
+  // Cmd/Ctrl+1..4 reach the pane with the same number a person sees in the rail.
+  const tabs = ["apps", "files", "sync", "settings"];
+  globalThis.addEventListener("keydown", (event) => {
+    if (!(event.ctrlKey || event.metaKey) || event.altKey) return;
+    const index = Number.parseInt(event.key, 10) - 1;
+    if (!Number.isInteger(index) || index < 0 || index >= tabs.length) return;
+    event.preventDefault();
+    rail.select(index);
+  });
 
   // A bar moves far more often than anything else in this window changes, so it arrives
   // on its own channel and redraws only the cards.
   bridge.onInstallProgress?.((installing) => {
     if (lastState === null) return;
     lastState = { ...lastState, installing };
-    renderApps(lastState, actions);
+    renderApps(visibleApps(lastState), actions);
   });
 
   document.getElementById("add").addEventListener("click", async () => {
@@ -131,6 +160,12 @@ if (typeof bridge !== "object" || bridge === null) {
   // The host's rooms change without Start knowing, so the pane re-reads when it is
   // opened rather than showing a snapshot from whenever the window last drew.
   document.getElementById("tab-sync").addEventListener("click", () => void refresh());
+
+  const search = document.getElementById("app-search");
+  search?.addEventListener("input", () => {
+    appFilter = search.value;
+    if (lastState !== null) render(lastState);
+  });
 
   // A launch Start initiated changes what is recent, so the window re-reads
   // rather than trusting what it already drew.

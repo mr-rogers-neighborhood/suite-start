@@ -16,6 +16,8 @@ export const START_IPC = {
   addApp: "suite:start:add",
   removeApp: "suite:start:remove",
   installApp: "suite:start:install",
+  uninstallApp: "suite:start:uninstall",
+  revealApp: "suite:start:reveal",
   recents: "suite:start:recents",
   forgetRecent: "suite:start:forget",
   openFile: "suite:start:open-file",
@@ -86,6 +88,13 @@ export interface AppCard {
   readonly releases: string | null;
   /** How many versions of this app are on disk here. */
   readonly versions: number;
+  /**
+   * Whether the process Start started is still alive.
+   *
+   * Only ever true for an app Start launched this session: a window opened from the menu
+   * is not this process's child, and guessing otherwise would be a claim nobody made.
+   */
+  readonly running: boolean;
   readonly channel: SuiteReleaseChannel;
   /** What the app says about its own updating, or `unknown` before it has asked. */
   readonly update: ReportedUpdate;

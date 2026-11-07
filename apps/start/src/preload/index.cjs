@@ -14,6 +14,10 @@ contextBridge.exposeInMainWorld("suiteStart", {
   launch: (id) => ipcRenderer.invoke("suite:start:launch", id),
   addApp: () => ipcRenderer.invoke("suite:start:add"),
   removeApp: (id) => ipcRenderer.invoke("suite:start:remove", id),
+  // Deletes what Start installed; the confirmation happens in main, where the paths are.
+  uninstallApp: (id) => ipcRenderer.invoke("suite:start:uninstall", id),
+  // An app id, never a path: main resolves it against its own records.
+  revealApp: (id) => ipcRenderer.invoke("suite:start:reveal", id),
   // Install or update one app from its signed feed. The bar arrives on its own
   // channel below, because a download moves far more often than a window redraws.
   installApp: (id) => ipcRenderer.invoke("suite:start:install", id),

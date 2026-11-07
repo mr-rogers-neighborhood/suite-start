@@ -133,7 +133,7 @@ export declare function isNewer(available: string | null, installed: string | nu
  * A feed answer is still the answer from the last check, so this refetches nothing and
  * claims nothing: it only records what is now on disk.
  */
-export declare function withInstalled(catalogue: readonly CatalogueApp[], id: string, version: string): readonly CatalogueApp[];
+export declare function withInstalled(catalogue: readonly CatalogueApp[], id: string, version: string | null): readonly CatalogueApp[];
 /**
  * Every app the suite offers, each with what is installed and what is offered.
  *

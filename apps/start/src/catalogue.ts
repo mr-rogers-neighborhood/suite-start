@@ -222,11 +222,15 @@ async function readEntry(entry: CatalogueEntry, options: CatalogueOptions): Prom
 export function withInstalled(
   catalogue: readonly CatalogueApp[],
   id: string,
-  version: string,
+  version: string | null,
 ): readonly CatalogueApp[] {
   return catalogue.map((entry) =>
     entry.id === id
-      ? { ...entry, installed: version, newer: isNewer(entry.available, version) }
+      ? {
+          ...entry,
+          installed: version,
+          newer: version === null ? false : isNewer(entry.available, version),
+        }
       : entry,
   );
 }

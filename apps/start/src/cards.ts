@@ -30,6 +30,8 @@ export interface CardInput {
   readonly catalogue: readonly CatalogueApp[];
   /** How many version directories each app has on disk, by app id. */
   readonly versions: ReadonlyMap<string, number>;
+  /** Which apps Start started and has not seen exit, by app id. */
+  readonly running: ReadonlySet<string>;
 }
 
 /** The folder name a refused install is known by. */
@@ -42,17 +44,16 @@ function nameFor(path: string): string {
 }
 
 /**
- * What one catalogue entry can offer.
+ * What one entry can offer, given what this machine actually has.
  *
- * Installed and the feed is ahead: an update. Installed and the feed agrees, or says
- * nothing: Open either way, with the card saying which. Not installed: Install when
- * something verified exists to install, and no button when nothing does.
+ * The installed version comes from discovery rather than from the catalogue: discovery is
+ * what read the disk, and a catalogue that remembered an install after it was removed
+ * would put "up to date" on a card with no version at all.
  */
-function stateFor(entry: CatalogueApp): AppCardState {
-  const installed = entry.installed !== null;
-  if (!installed) return entry.available !== null ? "not-installed" : "no-release";
-  if (entry.available === null) return "no-release";
-  return entry.newer ? "update-available" : "current";
+function stateFor(installedVersion: string | null, available: string | null): AppCardState {
+  if (installedVersion === null) return available !== null ? "not-installed" : "no-release";
+  if (available === null) return "no-release";
+  return isNewer(available, installedVersion) ? "update-available" : "current";
 }
 
 export function appCards(input: CardInput): readonly AppCard[] {
@@ -64,6 +65,7 @@ export function appCards(input: CardInput): readonly AppCard[] {
     available: null,
     reason: install.reason,
     versions: 0,
+    running: false,
     releases: null,
     channel: "stable",
     update: UNREPORTED,
@@ -84,11 +86,12 @@ export function appCards(input: CardInput): readonly AppCard[] {
       return {
         id: entry.id,
         name: found?.manifest.name ?? entry.name,
-        state: stateFor(entry),
+        state: stateFor(found === null ? null : found.manifest.version, entry.available),
         version: found?.manifest.version ?? null,
         available: entry.available,
         reason: entry.reason,
         versions: input.versions.get(entry.id) ?? (found === null ? 0 : 1),
+        running: input.running.has(entry.id),
         releases: entry.releases ?? null,
         channel: found?.manifest.update?.channel ?? entry.channel,
         update: input.updates.get(entry.id) ?? UNREPORTED,
@@ -110,6 +113,7 @@ export function appCards(input: CardInput): readonly AppCard[] {
     available: null,
     reason: null,
     versions: input.versions.get(entry.manifest.id) ?? 1,
+    running: input.running.has(entry.manifest.id),
     releases: null,
     channel: entry.manifest.update?.channel ?? "stable",
     update: input.updates.get(entry.manifest.id) ?? UNREPORTED,
@@ -143,6 +147,7 @@ export function selfCard(entry: CatalogueApp, version: string): AppCard {
     available: entry.available,
     reason: entry.reason,
     versions: 1,
+    running: false,
     releases: entry.releases ?? null,
     channel: entry.channel,
     update: UNREPORTED,

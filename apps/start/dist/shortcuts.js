@@ -1,0 +1,55 @@
+import { joinPath } from "@suite/contracts";
+/** The entry's file name, which is also how it is found again. */
+export function shortcutFilename(id) {
+    return `suite-${id}.desktop`;
+}
+/** Where one app's entry lives under a user's data directory. */
+export function shortcutPath(platform, home, id) {
+    return joinPath(platform, home, ".local", "share", "applications", shortcutFilename(id));
+}
+/**
+ * Where the icon a shortcut points at is installed.
+ *
+ * The theme directory rather than a bare path, so a panel that asks for a size finds the
+ * closest one instead of scaling a file it was handed.
+ */
+export function shortcutIconPath(platform, home, iconName, size = 256) {
+    return joinPath(platform, home, ".local", "share", "icons", "hicolor", `${size}x${size}`, "apps", `${iconName}.png`);
+}
+/** `.desktop` quoting: a path with a space or a quote must survive a parser. */
+function quoted(value) {
+    const escaped = value.replace(/\\/gu, "\\\\").replace(/"/gu, '\\"');
+    return `"${escaped}"`;
+}
+/**
+ * One `[Desktop Entry]` section.
+ *
+ * `StartupWMClass` is the app's own name because that is what an Electron window reports
+ * on X11 when it declares no `desktopName` of its own; a panel uses it to group the window
+ * under this entry instead of drawing a second, generic icon.
+ */
+export function shortcutText(input) {
+    const lines = [
+        "[Desktop Entry]",
+        "Type=Application",
+        `Name=${input.name}`,
+        `Comment=Opens ${input.extensions.join(", ") || "documents"} with ${input.name}`,
+        `Exec=${quoted(input.executable)} %U`,
+        `Icon=${input.iconName}`,
+        "Terminal=false",
+        "Categories=Utility;Office;",
+        `StartupWMClass=${input.name}`,
+    ];
+    // Only an app that opens files should claim a handler; otherwise a double-click would
+    // be offered a program that cannot do anything with the file.
+    const extension = input.extensions[0];
+    if (extension !== undefined) {
+        lines.push(`MimeType=application/x-suite-${input.id};`);
+    }
+    return `${lines.join("\n")}\n`;
+}
+/** The icon name one app's shortcut uses. */
+export function shortcutIconName(id) {
+    return `suite-${id}`;
+}
+//# sourceMappingURL=shortcuts.js.map

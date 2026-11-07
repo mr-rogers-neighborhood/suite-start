@@ -28,6 +28,8 @@ export interface CardInput {
     readonly catalogue: readonly CatalogueApp[];
     /** How many version directories each app has on disk, by app id. */
     readonly versions: ReadonlyMap<string, number>;
+    /** Which apps Start started and has not seen exit, by app id. */
+    readonly running: ReadonlySet<string>;
 }
 export declare function appCards(input: CardInput): readonly AppCard[];
 /**

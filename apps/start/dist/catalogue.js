@@ -124,7 +124,11 @@ async function readEntry(entry, options) {
  */
 export function withInstalled(catalogue, id, version) {
     return catalogue.map((entry) => entry.id === id
-        ? { ...entry, installed: version, newer: isNewer(entry.available, version) }
+        ? {
+            ...entry,
+            installed: version,
+            newer: version === null ? false : isNewer(entry.available, version),
+        }
         : entry);
 }
 /**

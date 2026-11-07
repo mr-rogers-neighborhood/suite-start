@@ -208,6 +208,25 @@ h3 {
   font-size: 12px;
 }
 
+/* The controls that belong to the list, beside its heading rather than in the rail. */
+.pane-tools {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-top: 10px;
+}
+
+.field {
+  font: inherit;
+  font-size: 13px;
+  padding: 6px 10px;
+  min-width: 200px;
+  border: 1px solid var(--hairline);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--ink);
+}
+
 .card-actions {
   display: flex;
   gap: 8px;
@@ -256,6 +275,11 @@ h3 {
 .card-self {
   background: transparent;
   border-style: dashed;
+}
+
+/* A window Start started and has not seen exit. */
+.card[data-running="true"] {
+  border-color: var(--accent);
 }
 
 .card-self-link {

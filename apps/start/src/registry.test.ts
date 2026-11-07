@@ -119,7 +119,10 @@ describe("discoverApps", () => {
     const files = { ...file("canvas", manifest()), ...file("canvas-copy", manifest()) };
     const result = await discover(files, [canvasRecord]);
     expect(result.apps).toHaveLength(1);
-    expect(result.rejected[0]?.reason).toContain("duplicate install of canvas");
+    expect(result.rejected[0]?.reason).toContain("a second copy of canvas");
+    // The reason names the consequence, because the consequence is the point: one profile,
+    // one single-instance lock, so the second copy cannot run beside the first.
+    expect(result.rejected[0]?.reason).toContain("only one copy");
   });
 
   it("ignores a directory with no manifest", async () => {

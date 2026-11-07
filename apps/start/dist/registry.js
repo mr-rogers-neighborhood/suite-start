@@ -94,7 +94,12 @@ export async function discoverApps(options) {
             continue;
         }
         if (seen.has(found.id)) {
-            rejected.push({ path: manifestPath, reason: `duplicate install of ${found.id}` });
+            // Two copies of one app share a profile (and its single-instance lock), so only one
+            // can run at a time. Saying which is which is more useful than calling it a fault.
+            rejected.push({
+                path: manifestPath,
+                reason: `a second copy of ${found.id}; only one copy of an app can run at a time`,
+            });
             continue;
         }
         const record = recordFor(options.records, found.id);

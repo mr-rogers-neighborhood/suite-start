@@ -12,6 +12,8 @@ export const START_IPC = {
     addApp: "suite:start:add",
     removeApp: "suite:start:remove",
     installApp: "suite:start:install",
+    uninstallApp: "suite:start:uninstall",
+    revealApp: "suite:start:reveal",
     recents: "suite:start:recents",
     forgetRecent: "suite:start:forget",
     openFile: "suite:start:open-file",

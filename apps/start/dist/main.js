@@ -1,6 +1,6 @@
 import { spawn } from "node:child_process";
 import { existsSync } from "node:fs";
-import { readFile } from "node:fs/promises";
+import { copyFile, mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { dirname, join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import { appDocumentsFolder, hubReportPath, parseDeepLink, SUITE_APPS, suiteApplicationsRoot, suiteDocumentsRoot, } from "@suite/contracts";
@@ -21,6 +21,7 @@ import { appById, discoverApps } from "./registry.js";
 import { readReportedUpdate } from "./reportedUpdate.js";
 import { describeRouteRejection, routeLaunch } from "./route.js";
 import { START_CHANGED, START_INSTALL_PROGRESS, START_IPC, } from "./shared.js";
+import { shortcutIconName, shortcutIconPath, shortcutPath, shortcutText } from "./shortcuts.js";
 import { checkForUpdates } from "./updateCheck.js";
 import { resolveWindowIcon } from "./windowIcon.js";
 /**
@@ -129,6 +130,32 @@ function fetchFeed(url) {
 }
 /** The fetch an install should use, for the same reason as `fetchFeed`. */
 const installFetch = (url, init) => net.fetch(typeof url === "string" ? url : url.toString(), init);
+/**
+ * The apps Start has started and not seen exit, by app id.
+ *
+ * A pid, not a promise: a window Start did not spawn (from the menu, say) is not in here
+ * and cannot be, and pretending otherwise would put a "Running" on a card nobody checked.
+ */
+const runningPids = new Map();
+function isAlive(pid) {
+    try {
+        process.kill(pid, 0);
+        return true;
+    }
+    catch {
+        return false;
+    }
+}
+function liveRunning() {
+    const live = new Set();
+    for (const [id, pid] of runningPids) {
+        if (isAlive(pid))
+            live.add(id);
+        else
+            runningPids.delete(id);
+    }
+    return live;
+}
 /** What the catalogue last answered, and what is being installed right now. */
 let catalogue = [];
 const installProgress = new Map();
@@ -292,6 +319,7 @@ async function state() {
         updates,
         catalogue,
         versions: await versionCounts(),
+        running: liveRunning(),
     });
     const recentCards = recent
         .flatMap((row) => {
@@ -370,6 +398,8 @@ function spawnExecutable(executable, argv, appId) {
         if (stderr.length < 8192)
             stderr += chunk;
     });
+    if (appId !== undefined && child.pid !== undefined)
+        runningPids.set(appId, child.pid);
     let settled = false;
     const settle = () => {
         settled = true;
@@ -380,6 +410,14 @@ function spawnExecutable(executable, argv, appId) {
             void broadcast();
     };
     setTimeout(settle, 1_500);
+    // Always: a window that closes is news even if it opened fine, because the card says
+    // "running" and nobody else is going to redraw it.
+    child.once("exit", () => {
+        if (appId !== undefined && runningPids.get(appId) === child.pid) {
+            runningPids.delete(appId);
+            void broadcast();
+        }
+    });
     child.once("exit", (code) => {
         if (settled)
             return;
@@ -467,6 +505,87 @@ async function addApp() {
     await registry.add(record);
     await broadcast();
 }
+/** Where a user-scope application entry lives, and where its icon goes. */
+function shortcutDirs() {
+    const platform = process.platform;
+    const home = app.getPath("home");
+    return {
+        entry: (id) => shortcutPath(platform, home, id),
+        icon: (name) => shortcutIconPath(platform, home, name),
+    };
+}
+/**
+ * Write (or rewrite) the menu entry for a managed install.
+ *
+ * The entry names the versioned executable, so an update has to rewrite it — which is why
+ * it is one file per app rather than one per version. Failure is a warning, never a failed
+ * install: a missing menu entry is a smaller problem than an app that will not install.
+ */
+async function writeShortcut(entry, executable) {
+    const dirs = shortcutDirs();
+    const iconName = shortcutIconName(entry.id);
+    try {
+        const iconSource = windowIcon();
+        if (iconSource !== null) {
+            const destination = dirs.icon(iconName);
+            await mkdir(dirname(destination), { recursive: true });
+            await copyFile(iconSource, destination);
+        }
+        const path = dirs.entry(entry.id);
+        await mkdir(dirname(path), { recursive: true });
+        await writeFile(path, shortcutText({
+            id: entry.id,
+            name: entry.name,
+            executable,
+            extensions: [...entry.extensions],
+            iconName,
+        }));
+        // Best effort: the cache is a convenience, and a machine without the tool still finds
+        // a freshly written file on its next scan.
+        const refresh = spawn("update-desktop-database", [dirname(path)], { stdio: "ignore" });
+        refresh.on("error", () => undefined);
+        refresh.unref();
+    }
+    catch (error) {
+        console.warn(`[shortcut] could not write the entry for ${entry.id}`, error);
+    }
+}
+/** Remove an app's entry and icon. Best effort, for the same reason as writing them. */
+async function removeShortcut(id) {
+    const dirs = shortcutDirs();
+    await rm(dirs.entry(id), { force: true }).catch(() => undefined);
+    await rm(dirs.icon(shortcutIconName(id)), { force: true }).catch(() => undefined);
+}
+/**
+ * Ask an app Start started to close, and wait a moment for it.
+ *
+ * SIGTERM first, because that is a request an app can answer — a document can be flushed.
+ * The caller decides what to do if it is still there afterwards; this never escalates on
+ * its own.
+ */
+function stopApp(id) {
+    const pid = runningPids.get(id);
+    if (pid === undefined)
+        return;
+    try {
+        process.kill(pid, 0);
+        process.kill(pid, "SIGTERM");
+    }
+    catch {
+        // Already gone: the map is stale, which the next `liveRunning` clears.
+    }
+}
+/** Wait until a pid is gone, or give up. Returns whether it went. */
+async function waitForExit(id, timeoutMs = 5_000) {
+    const started = Date.now();
+    while (Date.now() - started < timeoutMs) {
+        const pid = runningPids.get(id);
+        if (pid === undefined || !isAlive(pid))
+            return true;
+        await new Promise((resolve) => setTimeout(resolve, 150));
+    }
+    return false;
+}
 /** The sentence a failed install shows, which is what the step that failed wrote. */
 function describeInstallFailure(error) {
     return error instanceof Error && error.message.length > 0
@@ -498,6 +617,33 @@ async function installOne(id) {
     const version = entry.available;
     // An update replaces a version this machine already has, and finishes by relaunching it.
     const updating = entry.installed !== null && entry.installed !== version;
+    // Replacing the bytes under a live process is legal on Linux and rude in practice: the
+    // window a person is using would keep running the old image until they closed it. So an
+    // app Start started is closed first, by asking.
+    if (runningPids.has(id) && window !== null) {
+        const answer = await dialog.showMessageBox(window, {
+            type: "question",
+            title: "Update",
+            message: `Close ${entry.name} and update it to ${version}?`,
+            detail: "It will be reopened when the new version is in place.",
+            buttons: ["Cancel", "Close and update"],
+            defaultId: 1,
+            cancelId: 0,
+        });
+        if (answer.response !== 1)
+            return;
+        stopApp(id);
+        if (!(await waitForExit(id))) {
+            reportProgress({
+                id,
+                phase: "failed",
+                received: 0,
+                total: null,
+                reason: `${entry.name} did not close, so nothing was replaced`,
+            });
+            return;
+        }
+    }
     let emitted = { at: 0, percent: -1 };
     reportProgress({ id, phase: "downloading", received: 0, total: artifact.size, reason: null });
     try {
@@ -522,6 +668,7 @@ async function installOne(id) {
         });
         installProgress.delete(id);
         sendProgress();
+        await writeShortcut(entry, installed.executable);
         // The feed answer is still the last check's; only what is on disk changed.
         catalogue = withInstalled(catalogue, id, installed.version);
         await broadcast();
@@ -537,6 +684,29 @@ async function installOne(id) {
             received: 0,
             total: null,
             reason: describeInstallFailure(error),
+        });
+    }
+}
+/** Read the feeds again and redraw, which is what the menu item and the button both do. */
+async function refreshAndBroadcast() {
+    for (const [id, progress] of installProgress) {
+        if (progress.phase === "failed")
+            installProgress.delete(id);
+    }
+    await refreshCatalogue().catch((error) => {
+        console.warn("[catalogue] the feeds could not be read", error);
+    });
+    sendProgress();
+    await broadcast();
+}
+/** Open one of Start's own folders, rather than a path a page asked for. */
+async function openFolder(path) {
+    const problem = await shell.openPath(path);
+    if (problem.length > 0 && window !== null) {
+        await dialog.showMessageBox(window, {
+            type: "warning",
+            title: "Suite Start",
+            message: `That folder could not be opened: ${problem}`,
         });
     }
 }
@@ -633,6 +803,63 @@ function registerIpc() {
     onIpc(START_IPC.removeApp, async (_event, id) => {
         if (typeof id !== "string")
             return;
+        // A refusal that cannot be launched leaves a record and nothing else to delete.
+        await registry.remove(id);
+        await removeShortcut(id);
+        await broadcast();
+    });
+    /**
+     * Show a copy Start did not install, where it lives.
+     *
+     * The page names an app, never a path: main looks the executable up in its own records,
+     * which is the only place an executable path exists for a launch or a reveal.
+     */
+    onIpc(START_IPC.revealApp, async (_event, id) => {
+        if (typeof id !== "string")
+            return;
+        const { apps } = await discover();
+        const target = appById(apps, id);
+        if (target === null)
+            return;
+        shell.showItemInFolder(target.executable);
+    });
+    /**
+     * Uninstall: remove what Start installed, and forget it.
+     *
+     * "Remove" that leaves two hundred megabytes behind is a lie by omission, so this is the
+     * only removal a card offers for a managed install — with one dialog that names what
+     * goes. A copy Start did not place is not Start's to delete, and keeps the forget path.
+     */
+    onIpc(START_IPC.uninstallApp, async (_event, id) => {
+        if (typeof id !== "string" || window === null)
+            return;
+        const entry = CATALOGUE_APPS.find((candidate) => candidate.id === id);
+        if (entry === undefined)
+            return;
+        const versions = await installedVersions(applicationsRoot(), entry);
+        const answer = await dialog.showMessageBox(window, {
+            type: "warning",
+            title: "Uninstall",
+            message: `Uninstall ${entry.name}?`,
+            detail: versions.length === 0
+                ? "No files are installed here; this only forgets the app."
+                : `This deletes ${versions.length} version${versions.length === 1 ? "" : "s"} ` +
+                    `from ${applicationsRoot()}/${entry.folder}, its menu entry, and its install ` +
+                    "record. Documents are not touched.",
+            buttons: ["Cancel", "Uninstall"],
+            defaultId: 0,
+            cancelId: 0,
+        });
+        if (answer.response !== 1)
+            return;
+        if (runningPids.has(id)) {
+            stopApp(id);
+            await waitForExit(id);
+            runningPids.delete(id);
+        }
+        await rm(join(applicationsRoot(), entry.folder), { recursive: true, force: true });
+        catalogue = withInstalled(catalogue, id, null);
+        await removeShortcut(id);
         await registry.remove(id);
         await broadcast();
     });
@@ -687,15 +914,7 @@ function registerIpc() {
         await broadcast();
         return syncState();
     });
-    onIpc(START_IPC.checkUpdates, async () => {
-        for (const [id, progress] of installProgress) {
-            if (progress.phase === "failed")
-                installProgress.delete(id);
-        }
-        await refreshCatalogue();
-        sendProgress();
-        await broadcast();
-    });
+    onIpc(START_IPC.checkUpdates, () => refreshAndBroadcast());
     onIpc(START_IPC.info, () => ({
         host: "start",
         version: app.getVersion(),
@@ -801,7 +1020,20 @@ else {
         });
         registerIpc();
         Menu.setApplicationMenu(Menu.buildFromTemplate([
-            { role: "appMenu" },
+            // A launcher's menu carries the launcher's verbs; the standard roles stay because
+            // a window without Edit is a window people notice.
+            {
+                label: app.name,
+                submenu: [
+                    { label: "Check for Updates", click: () => void refreshAndBroadcast() },
+                    { label: "Add App…", click: () => void addApp() },
+                    { type: "separator" },
+                    { label: "Open Applications Folder", click: () => void openFolder(applicationsRoot()) },
+                    { label: "Open Data Folder", click: () => void openFolder(dataDirectory) },
+                    { type: "separator" },
+                    { role: "quit" },
+                ],
+            },
             { role: "editMenu" },
             { role: "viewMenu" },
             { role: "windowMenu" },

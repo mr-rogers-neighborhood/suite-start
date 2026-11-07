@@ -64,7 +64,6 @@
 
         <div class="rail-foot">
           <button id="check-updates" type="button" class="button">Check for updates</button>
-          <button id="add" type="button" class="button">Add app…</button>
         </div>
       </nav>
 
@@ -76,6 +75,17 @@
               The apps the suite offers, and what this machine has. Start installs and
               launches them; it never opens or edits your documents.
             </p>
+            <div class="pane-tools">
+              <input
+                id="app-search"
+                class="field"
+                type="search"
+                placeholder="Filter apps"
+                aria-label="Filter apps"
+                autocomplete="off"
+              />
+              <button id="add" type="button" class="button">Add app…</button>
+            </div>
           </header>
           <ul id="apps" class="cards"></ul>
           <p id="apps-empty" class="empty" hidden>

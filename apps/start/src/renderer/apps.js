@@ -9,15 +9,19 @@ import { el, relativeTime } from "./format.js";
  */
 function stateLine(card) {
   const versions = card.versions > 1 ? ` · ${card.versions} versions` : "";
+  const running = card.running ? " · running" : "";
   if (card.state === "not-installed") return "Not installed yet";
   if (card.state === "no-release") {
     return card.version === null ? "No release found" : `${card.version} · no release found`;
   }
   if (card.state === "update-available") {
-    return `${card.version} · newer version available${versions}`;
+    return `${card.version} · newer version available${versions}${running}`;
   }
-  if (card.state === "local") return `${card.version} · installed from a folder${versions}`;
-  return `${card.version} · up to date${versions}`;
+  if (card.state === "local") {
+    // A copy Start did not place manages itself; saying so is the whole rule.
+    return `${card.version} · from a folder · updates itself${versions}${running}`;
+  }
+  return `${card.version} · up to date${versions}${running}`;
 }
 
 /**
@@ -90,7 +94,16 @@ function cardActions(card, actions) {
     buttons.append(button("Open", "primary", () => actions.launch(card.id)));
   }
 
-  buttons.append(button("Remove", "quiet", () => actions.remove(card.id)));
+  if (card.state === "local") {
+    // A copy Start did not install: it can open it, show where it is, and stop listing it.
+    // Deleting it is not Start's to do — the person put it there.
+    buttons.append(button("Reveal", "quiet", () => actions.reveal(card.id)));
+    buttons.append(button("Forget", "quiet", () => actions.remove(card.id)));
+    return buttons;
+  }
+
+  // Managed: Start placed these files, so Start is the one that may delete them.
+  buttons.append(button("Uninstall", "quiet", () => actions.uninstall(card.id)));
   return buttons;
 }
 

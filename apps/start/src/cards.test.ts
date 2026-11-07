@@ -68,6 +68,7 @@ const UNREPORTED: ReportedUpdate = {
 
 const NO_UPDATES: ReadonlyMap<string, ReportedUpdate> = new Map();
 const NO_VERSIONS: ReadonlyMap<string, number> = new Map();
+const NO_RUNNING: ReadonlySet<string> = new Set();
 
 describe("appCards", () => {
   it("offers a card for an app that is not on this machine at all", () => {
@@ -80,6 +81,7 @@ describe("appCards", () => {
       updates: NO_UPDATES,
       catalogue: [offered({ available: "0.2.0" })],
       versions: NO_VERSIONS,
+      running: NO_RUNNING,
     });
     expect(card).toMatchObject({
       id: "canvas",
@@ -100,6 +102,7 @@ describe("appCards", () => {
       updates: NO_UPDATES,
       catalogue: [offered({ reason: "the manifest is not signed by the publisher" })],
       versions: NO_VERSIONS,
+      running: NO_RUNNING,
     });
     expect(card?.state).toBe("no-release");
     expect(card?.available).toBeNull();
@@ -115,6 +118,7 @@ describe("appCards", () => {
       updates: NO_UPDATES,
       catalogue: [offered({ available: "0.2.0", installed: "0.1.0", newer: true })],
       versions: new Map([["canvas", 2]]),
+      running: NO_RUNNING,
     });
     expect(card).toMatchObject({
       state: "update-available",
@@ -134,6 +138,7 @@ describe("appCards", () => {
       updates: NO_UPDATES,
       catalogue: [offered({ available: "0.1.0", installed: "0.1.0" })],
       versions: NO_VERSIONS,
+      running: NO_RUNNING,
     });
     expect(card).toMatchObject({ state: "current", version: "0.1.0", available: "0.1.0" });
   });
@@ -148,6 +153,7 @@ describe("appCards", () => {
       updates: NO_UPDATES,
       catalogue: [],
       versions: NO_VERSIONS,
+      running: NO_RUNNING,
     });
     expect(card).toMatchObject({
       id: "scratch",
@@ -167,6 +173,7 @@ describe("appCards", () => {
       updates: NO_UPDATES,
       catalogue: [offered({ installed: "0.1.0", available: "0.1.0" })],
       versions: NO_VERSIONS,
+      running: NO_RUNNING,
     });
     expect(card?.fileCount).toBe(2);
     expect(card?.health).toEqual({ ok: true });
@@ -192,6 +199,7 @@ describe("appCards", () => {
       ]),
       catalogue: [offered({ installed: "0.1.0", available: "0.1.0" })],
       versions: NO_VERSIONS,
+      running: NO_RUNNING,
     });
     expect(card).toMatchObject({ channel: "beta", update: { state: "available" } });
   });
@@ -205,6 +213,7 @@ describe("appCards", () => {
       updates: NO_UPDATES,
       catalogue: [offered({ installed: "0.1.0" })],
       versions: NO_VERSIONS,
+      running: NO_RUNNING,
     });
     expect(card?.update).toEqual(UNREPORTED);
   });
@@ -218,6 +227,7 @@ describe("appCards", () => {
       updates: NO_UPDATES,
       catalogue: [offered({ installed: "0.1.0" })],
       versions: NO_VERSIONS,
+      running: NO_RUNNING,
     });
     expect(card?.lastOpenedAt).toBe(1_700_000_000_000);
   });
@@ -234,6 +244,7 @@ describe("appCards", () => {
       updates: NO_UPDATES,
       catalogue: [offered({ installed: "0.1.0" })],
       versions: NO_VERSIONS,
+      running: NO_RUNNING,
     });
 
     expect(cards).toHaveLength(3);
@@ -260,6 +271,7 @@ describe("appCards", () => {
         offered({ id: "planner", name: "Suite Planner", installed: "0.1.0" }),
       ],
       versions: NO_VERSIONS,
+      running: NO_RUNNING,
     });
     expect(attentionCount(cards)).toBe(1);
     expect(attentionCount([])).toBe(0);
