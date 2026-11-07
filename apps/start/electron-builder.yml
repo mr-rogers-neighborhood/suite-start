@@ -6,6 +6,10 @@
 appId: run.suite.start
 productName: Suite Start
 executableName: suite-start
+# No spaces: GitHub rewrites a space in an asset name to a dot, and the feed names the
+# file it published — so `Suite Start-0.3.0.AppImage` in the yml became
+# `Suite.Start-0.3.0.AppImage` on the release, and the download the feed promised 404ed.
+artifactName: suite-start-${version}-${arch}.${ext}
 copyright: Copyright © Suite contributors
 
 directories:
