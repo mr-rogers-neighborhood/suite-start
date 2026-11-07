@@ -14,7 +14,7 @@
 # them — see docs/how-to/package.md.
 
 pkgname=suite-start-bin
-pkgver=0.3.0
+pkgver=0.3.1
 pkgrel=1
 pkgdesc='The Suite hub: installs, updates and opens the Suite apps'
 arch=('x86_64')
@@ -51,7 +51,7 @@ options=(!strip)
 # Tag-pinned, not `latest/download`: a package that silently changes contents when a
 # newer release appears is not reproducible, and `sha256sums` would be wrong for it.
 source=("$pkgname-$pkgver.AppImage::https://github.com/mr-rogers-neighborhood/suite-start/releases/download/start-v$pkgver/suite-start-$pkgver-x86_64.AppImage")
-sha256sums=('577c510da3cd3ff532e92b46ee6ca0b2e17f80f0c64102bc2276562ca3529b1d')
+sha256sums=('f7b0581539de0aacc3f26190c68bbe1b827774afc34ebb9400bac1f429c3260c')
 
 package() {
   cd "$srcdir"
