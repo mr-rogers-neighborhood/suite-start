@@ -8,7 +8,14 @@ server on a device they control.
 
 Suite Start is the one app you fetch by hand; every other app in the suite arrives through it.
 
-Take `suite-start-<version>-x86_64.AppImage` from the
+**On Arch**, take the package — it needs no FUSE and gives you a menu entry:
+
+```sh
+curl -LO https://github.com/mr-rogers-neighborhood/suite-start/releases/latest/download/suite-start-bin-0.3.0-1-x86_64.pkg.tar.zst
+sudo pacman -U suite-start-bin-0.3.0-1-x86_64.pkg.tar.zst
+```
+
+Everywhere else, take `suite-start-<version>-x86_64.AppImage` from the
 [latest release](https://github.com/mr-rogers-neighborhood/suite-start/releases/latest), then:
 
 ```sh
@@ -21,8 +28,9 @@ An AppImage needs FUSE 2, which many distributions no longer install by default:
 libfuse.so.2`; `--appimage-extract-and-run` starts it anyway.
 
 [Installing Suite Start](docs/how-to/install.md) has the checksum step, the error messages worth
-recognising, and what each card state means. Everything below describes the code rather than the
-download.
+recognising, and what each card state means. [Packaging](docs/how-to/package.md) explains the four
+Linux forms and why the hub is packaged while the apps it installs stay AppImages: Start can only
+replace a file it is allowed to write. Everything below describes the code rather than the download.
 
 ## What exists
 

@@ -3,7 +3,24 @@
 Suite Start is the hub: one window that installs, updates and opens the other apps in the suite. It is
 the only piece you fetch by hand — every other app arrives through it.
 
-## 1. Download
+## 0. On Arch, use the package (shortest path)
+
+The release also carries an Arch package, which installs the hub under `/opt` with a menu entry and
+**no FUSE requirement at all**:
+
+```sh
+curl -LO https://github.com/mr-rogers-neighborhood/suite-start/releases/latest/download/suite-start-bin-0.3.0-1-x86_64.pkg.tar.zst
+sudo pacman -U suite-start-bin-0.3.0-1-x86_64.pkg.tar.zst
+```
+
+Then start **Suite Start** from your application menu, or run `suite-start`. A new hub version arrives
+the same way: download the newer package from its release and `pacman -U` it. The hub cannot update
+itself, and says so on its own row.
+
+[Packaging: four forms, and which one is for what](package.md) explains why the hub is packaged while
+the apps it installs stay AppImages.
+
+## 1. Download (the AppImage, for every other distribution)
 
 Open the [latest release](https://github.com/mr-rogers-neighborhood/suite-start/releases/latest) and
 download:

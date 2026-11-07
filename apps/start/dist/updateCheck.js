@@ -1,4 +1,4 @@
-import { readFile, writeFile } from "node:fs/promises";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { SUITE_UPDATE_STATE_FILE, updateAvailable, } from "@suite/contracts";
 import { checkSignedFeed, feedUrlFromAppUpdateYml } from "@suite/desktop";
@@ -66,6 +66,10 @@ export function reportPath(dataDir) {
 /** Write the report the hub reads. Failure is logged, never thrown: a report is a courtesy. */
 export async function writeReport(dataDir, state) {
     try {
+        // A data directory that does not exist yet is the state of a first run with
+        // `SUITE_START_DATA` (or any app's own override) pointed at a fresh path; creating it
+        // is cheaper than explaining why the report was skipped.
+        await mkdir(dataDir, { recursive: true });
         await writeFile(reportPath(dataDir), `${JSON.stringify(state, null, 2)}\n`);
     }
     catch (error) {

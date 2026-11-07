@@ -57,6 +57,9 @@ package() {
   cd "$srcdir"
 
   # `--appimage-extract` needs no FUSE, which is the whole point of this package.
+  # A downloaded source arrives without the executable bit, so set it here rather than
+  # relying on how makepkg happened to fetch it.
+  chmod +x "$pkgname-$pkgver.AppImage"
   ./"$pkgname-$pkgver.AppImage" --appimage-extract >/dev/null
 
   install -dm755 "$pkgdir/opt/suite-start"
