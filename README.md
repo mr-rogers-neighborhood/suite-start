@@ -158,6 +158,17 @@ a launch.
 **Add app…** runs a file picker in the main process, reads the manifest beside the chosen executable and
 writes the record — the same handoff a packaged install has, for a copy you built or placed yourself.
 
+A managed install also earns a menu entry: `~/.local/share/applications/suite-<id>.desktop`, user scope,
+written on install and rewritten on update, so the app can be opened without Start. That is the point of
+the hub — it does not keep the apps to itself.
+
+**One copy per app, and its owner is decided at install.** A copy Start installed is Start's to replace
+and to delete: the card offers **Update** and **Uninstall**, and says **running** when the process Start
+started is still alive, asking before it closes and replaces it. A copy you placed is first-class and
+manages itself — the card says "from a folder · updates itself" and offers Open, Reveal and Forget, never
+Uninstall. Two copies of one app is not a preference to offer: they share a profile and its
+single-instance lock, so only one can run.
+
 **Install** is Start's own job. `catalogue.ts` names the three apps the suite offers and the feed each
 one declares, and asks every feed what version it has when the window opens or when you press _Check for
 updates_. A card is then in one of four honest states: not installed, no release found, an update
