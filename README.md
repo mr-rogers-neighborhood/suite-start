@@ -126,8 +126,14 @@ only place an executable path lives. A manifest may not name a binary, so a tamp
 a launch.
 
 **Add app…** runs a file picker in the main process, reads the manifest beside the chosen executable and
-writes the record. That stands in for an installer this phase does not build, and it uses the same
-handoff a packaged install has.
+writes the record — the same handoff a packaged install has, for a copy you built or placed yourself.
+
+**Install** is Start's own job. `catalogue.ts` names the three apps the suite offers and the feed each
+one declares, and asks every feed what version it has when the window opens or when you press _Check for
+updates_. A card is then in one of four honest states: not installed, no release found, an update
+available, or up to date. Pressing the button downloads the artifact named by the **verified** manifest,
+checks its sha512 against that manifest, places it in `~/Applications/Suite/<App>/<version>/`, makes it
+executable, writes the manifest and the install record — and nothing is unpacked, ever. `SUITE_START_APPS_ROOT` and `SUITE_START_FEED_BASE` move those two roots for a test.
 
 ```sh
 pnpm build && pnpm --filter @suite/start start   # the launcher

@@ -1,6 +1,7 @@
 # ADR-0001: Start owns routing, not updates
 
-- Status: accepted; amended 2026-11-06 (the hub may read a feed when asked)
+- Status: accepted; amended 2026-11-06 (the hub may read a feed when asked) and 2026-11-07
+  (Start installs **and** replaces — D45)
 - Date: 2026-11-06
 
 ## Context
@@ -60,3 +61,49 @@ So the hub may also read an app's release feed, under four conditions:
 
 The sentence in Settings changes with it, from "this build makes no network request" to the truth: no
 request unless you ask for one.
+
+## Amendment (2026-11-07): Start installs **and** replaces — D45
+
+The body of this record ends with a promise: "installing an app that is not on the machine at all is
+Start's job … that is the installer, and it is a later milestone." That milestone is here, and it
+overturns the sentence before it.
+
+**The decision changes from "Start installs; apps update" to "Start installs and updates; an app updates
+itself only when nobody else is doing it."**
+
+Why the old rule cannot survive its own milestone:
+
+- An install happens because Start read a feed and learned a version it can offer. Once it can _place_ a
+  version it can also _replace_ one, and the app's own updater would then race it — two programs
+  entitled to write the same path, which is the exact failure the original decision existed to prevent.
+- The person is looking at Start. A card that says "0.2.0 is available" and then does nothing, while a
+  silent updater acts on launch, is a card that lies about who is in charge.
+- Replacement needs a version the app does not know about yet. Only the process that read the feed knows
+  it, and only that process can act on it.
+
+So one process owns the replacement, and it is the one showing the version.
+
+What this keeps from the original record, unchanged:
+
+- **One writer per binary.** Start writes; the app it installed does not. An app that Start did not
+  install keeps its own updater, which is the promise the release notes have always made to anyone who
+  built a copy themselves.
+- **One trust anchor.** The feed, its signature and the artifact's fingerprint are the same three checks
+  the app would have made, made in one place.
+- **Nothing downloads itself.** A feed may be read when the window opens and when a person asks; an
+  artifact is fetched only when a button is pressed. This widens the first amendment's "on demand only"
+  by exactly one event — the launcher opening — and adds no timer and no background check.
+- **Everything Start places is recorded.** `installs.json` is still the only place a binary path lives,
+  and the rule that a manifest may not name a path is unchanged.
+
+What it changes:
+
+- Start writes inside its own install root (`~/Applications/Suite/<App>/<version>/`), and nowhere else.
+  An install is a file placed and made executable, never an archive unpacked.
+- A card's version answer comes from Start's own read of the signed feed; the app's `update-state.json`
+  is a second opinion shown when the feed is silent.
+
+**Not yet landed.** An app Start installed is meant to be launched with `SUITE_MANAGED_BY=start` and to
+skip its own check while still writing its report. That flag is the next step, so until it lands the two
+updaters can still race on a machine where both are running. The amendment is dated from the decision,
+not from the flag.

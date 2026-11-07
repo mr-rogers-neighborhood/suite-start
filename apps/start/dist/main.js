@@ -1,22 +1,24 @@
 import { spawn } from "node:child_process";
+import { readFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { pathToFileURL } from "node:url";
-import { appDocumentsFolder, hubReportPath, parseDeepLink, SUITE_APPS, suiteDocumentsRoot, } from "@suite/contracts";
-import { desktopCsp, isTrustedSender, resolveProtocolAsset } from "@suite/desktop";
+import { appDocumentsFolder, hubReportPath, parseDeepLink, SUITE_APPS, suiteApplicationsRoot, suiteDocumentsRoot, } from "@suite/contracts";
+import { desktopCsp, feedUrlFromAppUpdateYml, isTrustedSender, resolveProtocolAsset, } from "@suite/desktop";
 import { app, BrowserWindow, dialog, ipcMain, Menu, net, protocol, shell } from "electron";
-import { appCards, fileCards } from "./cards.js";
+import { appCards, fileCards, selfCard } from "./cards.js";
+import { CATALOGUE_APPS, readCatalogue, SELF_ID, withInstalled, } from "./catalogue.js";
 import { indexDocuments, isInsideDocuments } from "./fileIndex.js";
 import { StartHost } from "./host.js";
 import { writeHubReport } from "./hubReport.js";
+import { installApp, installedVersions } from "./install.js";
 import { registryStore } from "./installs.js";
 import { defaultRoots, nodeRegistryFileSystem } from "./nodeFileSystem.js";
 import { RECENT_LIMIT, recentsFile } from "./recents.js";
 import { readRecoveryReports, recoveryFor } from "./recovery.js";
 import { appById, discoverApps } from "./registry.js";
-import { checkFeed } from "./releaseFeed.js";
-import { fromCheck, readReportedUpdate, } from "./reportedUpdate.js";
+import { readReportedUpdate } from "./reportedUpdate.js";
 import { describeRouteRejection, routeLaunch } from "./route.js";
-import { START_CHANGED, START_IPC, } from "./shared.js";
+import { START_CHANGED, START_INSTALL_PROGRESS, START_IPC, } from "./shared.js";
 import { checkForUpdates } from "./updateCheck.js";
 /**
  * Suite Start.
@@ -76,6 +78,79 @@ function documentsRoot() {
     return suiteDocumentsRoot(process.platform, app.getPath("home"), process.env.SUITE_START_DOCUMENTS);
 }
 /**
+ * Where this hub puts an app it installs.
+ *
+ * `~/Applications/Suite` unless `SUITE_START_APPS_ROOT` says otherwise, which is how a
+ * test installs into a directory it can throw away.
+ */
+function applicationsRoot() {
+    return suiteApplicationsRoot(process.platform, app.getPath("home"), process.env.SUITE_START_APPS_ROOT);
+}
+/** A local folder of releases, in place of the published feeds. Empty when not set. */
+function feedBase() {
+    const named = process.env.SUITE_START_FEED_BASE?.trim();
+    return named !== undefined && named.length > 0 ? named : undefined;
+}
+/**
+ * The hub's own feed, from the `app-update.yml` electron-builder writes beside a
+ * packaged binary. A dev run has no such file, so its row says the build has no feed.
+ */
+async function selfFeed() {
+    if (!app.isPackaged)
+        return null;
+    try {
+        return feedUrlFromAppUpdateYml(await readFile(join(process.resourcesPath, "app-update.yml"), "utf8"));
+    }
+    catch {
+        return null;
+    }
+}
+/**
+ * One request per feed, and none of them may hold the window.
+ *
+ * A feed that hangs is a launcher that hangs if this had no ceiling; ten seconds is long
+ * enough for a slow network and short enough to be a reason rather than a stall.
+ */
+function fetchFeed(url) {
+    return fetch(url, { signal: AbortSignal.timeout(10_000) });
+}
+/** What the catalogue last answered, and what is being installed right now. */
+let catalogue = [];
+const installProgress = new Map();
+/**
+ * Ask every feed what it offers.
+ *
+ * This runs when the window opens and when a person presses a button — never on a timer,
+ * and it never downloads. A feed it cannot read becomes a sentence on the card rather
+ * than a failure of the window.
+ */
+async function refreshCatalogue() {
+    const { apps } = await discover();
+    catalogue = await readCatalogue({
+        installed: new Map(apps.map((entry) => [entry.manifest.id, entry.manifest.version])),
+        feedBase: feedBase(),
+        selfFeed: await selfFeed(),
+        fetch: fetchFeed,
+    });
+}
+/** How many versions of each catalogue app are on disk here. One listing each. */
+async function versionCounts() {
+    const counts = new Map();
+    const root = applicationsRoot();
+    await Promise.all(CATALOGUE_APPS.map(async (entry) => {
+        counts.set(entry.id, (await installedVersions(root, entry)).length);
+    }));
+    return counts;
+}
+/** Send the progress list, which is the only thing that changes while a bar moves. */
+function sendProgress() {
+    window?.webContents.send(START_INSTALL_PROGRESS, [...installProgress.values()]);
+}
+function reportProgress(progress) {
+    installProgress.set(progress.id, progress);
+    sendProgress();
+}
+/**
  * Where each app keeps its machine-local state.
  *
  * The same roots `suitePaths` gives the app itself, so a report is read from the
@@ -111,13 +186,6 @@ async function discover() {
     });
     return { apps: result.apps, refused: result.rejected };
 }
-/**
- * Answers from checks this session ran, by app id.
- *
- * Only a check a person asked for lands here, and only for the life of the window:
- * a cached answer that outlives the question becomes a claim nobody made.
- */
-const checkedUpdates = new Map();
 /**
  * The host's state, or a stopped one before it exists.
  *
@@ -194,19 +262,21 @@ async function state() {
     const { apps, refused } = await discover();
     const recent = await recents.list();
     const files = await indexDocuments(documentFolders(), nodeRegistryFileSystem(), new Set(apps.map((entry) => entry.manifest.id)));
-    // Each app reports its own update state; the hub reads it and asks nothing.
+    // What each app says about its own updating. Still read, because an app Start did not
+    // install updates itself and the card should be able to say what it found.
     const updates = new Map();
     await Promise.all(apps.map(async (entry) => {
-        const checked = checkedUpdates.get(entry.manifest.id);
-        updates.set(entry.manifest.id, checked ??
-            (await readReportedUpdate(entry.manifest.id, updateLookup(), nodeRegistryFileSystem())));
+        updates.set(entry.manifest.id, await readReportedUpdate(entry.manifest.id, updateLookup(), nodeRegistryFileSystem()));
     }));
+    const self = catalogue.find((entry) => entry.id === SELF_ID);
     const cards = appCards({
         apps,
         rejected: refused,
         files,
         recents: recent,
         updates,
+        catalogue,
+        versions: await versionCounts(),
     });
     const recentCards = recent
         .flatMap((row) => {
@@ -228,9 +298,17 @@ async function state() {
         apps: cards,
         recents: recentCards,
         files: fileCards(files),
-        settings: { dataDirectory, documentsRoot: documentsRoot(), installRoots: roots() },
+        settings: {
+            dataDirectory,
+            documentsRoot: documentsRoot(),
+            installRoots: [...new Set([...roots(), applicationsRoot()])],
+        },
         version: app.getVersion(),
         sync: await syncState(),
+        // The hub cannot replace its own running binary, so it says what it is rather than
+        // offering a button that would fail.
+        self: self === undefined ? null : selfCard(self, app.getVersion()),
+        installing: [...installProgress.values()],
     };
 }
 /**
@@ -300,6 +378,71 @@ async function addApp() {
     await registry.add(record);
     await broadcast();
 }
+/** The sentence a failed install shows, which is what the step that failed wrote. */
+function describeInstallFailure(error) {
+    return error instanceof Error && error.message.length > 0
+        ? error.message
+        : "the install did not finish, and nothing was replaced";
+}
+/**
+ * Install or update one app, and let the card watch it happen.
+ *
+ * The artifact is downloaded to a staging directory, checked against the fingerprint the
+ * verified manifest named, and only then placed. So a download that fails, or a file that
+ * is not the one the publisher signed, leaves the previous install exactly as it was.
+ */
+async function installOne(id) {
+    const entry = catalogue.find((app) => app.id === id);
+    if (entry === undefined)
+        return;
+    if (entry.available === null || entry.artifact === null) {
+        reportProgress({
+            id,
+            phase: "failed",
+            received: 0,
+            total: null,
+            reason: entry.reason ?? "the feed named no file to install",
+        });
+        return;
+    }
+    const artifact = entry.artifact;
+    const version = entry.available;
+    let emitted = { at: 0, percent: -1 };
+    reportProgress({ id, phase: "downloading", received: 0, total: artifact.size, reason: null });
+    try {
+        const installed = await installApp({
+            entry,
+            version,
+            artifact,
+            feed: entry.feed,
+            appsRoot: applicationsRoot(),
+            registry,
+            onProgress: (received, total) => {
+                const percent = total === null || total === 0 ? -1 : Math.floor((received / total) * 100);
+                const at = Date.now();
+                // A bar does not need every chunk, and the window is not the thing being written.
+                if (percent === emitted.percent && at - emitted.at < 500)
+                    return;
+                emitted = { at, percent };
+                reportProgress({ id, phase: "downloading", received, total, reason: null });
+            },
+        });
+        installProgress.delete(id);
+        sendProgress();
+        // The feed answer is still the last check's; only what is on disk changed.
+        catalogue = withInstalled(catalogue, id, installed.version);
+        await broadcast();
+    }
+    catch (error) {
+        reportProgress({
+            id,
+            phase: "failed",
+            received: 0,
+            total: null,
+            reason: describeInstallFailure(error),
+        });
+    }
+}
 function createWindow() {
     const created = new BrowserWindow({
         width: 880,
@@ -362,6 +505,18 @@ function registerIpc() {
         await broadcast();
     });
     onIpc(START_IPC.addApp, () => addApp());
+    /**
+     * Install or update one app, with the card watching.
+     *
+     * Every step here is the person's: the feed was read because the window opened or
+     * because they asked it to look again, and this runs only because they pressed the
+     * button the card drew.
+     */
+    onIpc(START_IPC.installApp, async (_event, id) => {
+        if (typeof id !== "string")
+            return;
+        await installOne(id);
+    });
     onIpc(START_IPC.removeApp, async (_event, id) => {
         if (typeof id !== "string")
             return;
@@ -420,16 +575,12 @@ function registerIpc() {
         return syncState();
     });
     onIpc(START_IPC.checkUpdates, async () => {
-        const { apps } = await discover();
-        await Promise.all(apps.map(async (entry) => {
-            const feed = entry.manifest.update?.feed;
-            if (feed === undefined)
-                return;
-            const check = await checkFeed(feed, process.platform, (url) => fetch(url));
-            const merged = fromCheck(entry.manifest.version, check);
-            if (merged.source === "check")
-                checkedUpdates.set(entry.manifest.id, merged);
-        }));
+        for (const [id, progress] of installProgress) {
+            if (progress.phase === "failed")
+                installProgress.delete(id);
+        }
+        await refreshCatalogue();
+        sendProgress();
         await broadcast();
     });
     onIpc(START_IPC.info, () => ({
@@ -544,6 +695,12 @@ else {
         ]));
         window = createWindow();
         await show();
+        // The window is up before any feed is read, so a slow network delays a card rather
+        // than the launcher. What arrives is broadcast, and the cards redraw.
+        await refreshCatalogue().catch((error) => {
+            console.warn("[catalogue] the feeds could not be read", error);
+        });
+        await broadcast();
         // The hub updates itself like any app: its own feed, its own report. A dev run
         // has no feed, so it does not ask.
         void checkForUpdates({

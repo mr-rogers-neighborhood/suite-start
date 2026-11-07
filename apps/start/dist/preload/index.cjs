@@ -14,6 +14,9 @@ contextBridge.exposeInMainWorld("suiteStart", {
   launch: (id) => ipcRenderer.invoke("suite:start:launch", id),
   addApp: () => ipcRenderer.invoke("suite:start:add"),
   removeApp: (id) => ipcRenderer.invoke("suite:start:remove", id),
+  // Install or update one app from its signed feed. The bar arrives on its own
+  // channel below, because a download moves far more often than a window redraws.
+  installApp: (id) => ipcRenderer.invoke("suite:start:install", id),
   recents: () => ipcRenderer.invoke("suite:start:recents"),
   forgetRecent: (path) => ipcRenderer.invoke("suite:start:forget", path),
   openFile: (path) => ipcRenderer.invoke("suite:start:open-file", path),
@@ -28,5 +31,9 @@ contextBridge.exposeInMainWorld("suiteStart", {
   // The window outlives no page load, so the listener is never removed.
   onChanged: (listener) => {
     ipcRenderer.on("suite:start:changed", (_event, state) => listener(state));
+  },
+  // One app's install progress, and only while one is running.
+  onInstallProgress: (listener) => {
+    ipcRenderer.on("suite:start:install-progress", (_event, installing) => listener(installing));
   },
 });

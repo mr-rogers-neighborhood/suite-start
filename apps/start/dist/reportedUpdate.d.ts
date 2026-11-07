@@ -2,10 +2,14 @@ import { type SuiteUpdateState } from "@suite/contracts";
 /**
  * What an app says about its own updating.
  *
- * The app owns its bytes and its feed, so the hub never asks a feed anything. An
- * app writes `update-state.json` into its own data directory after it has asked,
- * and this reads it. A file that is absent, unreadable or about another format is
- * `unknown` rather than an error: an app that has never checked has not failed.
+ * An app writes `update-state.json` into its own data directory after it has asked its
+ * own feed, and this reads it. A file that is absent, unreadable or about another format
+ * is `unknown` rather than an error: an app that has never checked has not failed.
+ *
+ * This is now a **second opinion**, not the hub's answer. The catalogue reads the same
+ * signed feeds the apps read, because Start is what installs and replaces an app (D45).
+ * The report is still worth reading: an app Start did not install updates itself, and its
+ * card can say what that app found.
  */
 export interface ReportedUpdate {
     /** Whether a newer version is known to exist. */
@@ -16,8 +20,8 @@ export interface ReportedUpdate {
     readonly available: string | null;
     /** When the app last asked, ISO-8601. */
     readonly checkedAt: string | null;
-    /** Who answered: the app's own report, or a check the hub ran when asked. */
-    readonly source: "app" | "check" | null;
+    /** Who answered — the app's own report, and null for an app that never wrote one. */
+    readonly source: "app" | null;
 }
 /** The report an install has not written yet. */
 export declare const UNREPORTED: ReportedUpdate;
@@ -34,18 +38,6 @@ export interface UpdateFileSystem {
 }
 /** Read one app's report, or `unknown` when it has never written one. */
 export declare function readReportedUpdate(appId: string, options: UpdateLookup, fileSystem: UpdateFileSystem): Promise<ReportedUpdate>;
-/**
- * The report a check produces, which wins over what the app last said.
- *
- * A check is newer by construction: it ran because a person asked for it now. When
- * the check finds nothing newer, the card says so and says when, rather than
- * falling back to a report from three weeks ago.
- */
-export declare function fromCheck(installedVersion: string, check: {
-    readonly version: string | null;
-    readonly reason: string | null;
-    readonly checkedAt: string;
-}): ReportedUpdate;
 /** The report a parsed file describes. */
 export declare function fromState(state: SuiteUpdateState): ReportedUpdate;
 //# sourceMappingURL=reportedUpdate.d.ts.map

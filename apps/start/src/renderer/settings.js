@@ -19,11 +19,13 @@ export function renderSettings(state) {
   pair("Documents", state.settings.documentsRoot);
   pair(
     "Updates",
-    "Each app updates itself and reports what it found. This window reads that report and fetches nothing.",
+    "Start checks each app's signed feed when this window opens, and installs only what you press. " +
+      "An app Start installed leaves its own updating to Start; a copy you placed yourself keeps its own.",
   );
   pair(
     "Network",
-    "This window makes no request of its own. The host listens for devices; see Sync.",
+    "Reading those feeds is the only request Start makes, and it never downloads anything you did not " +
+      "ask for. The host listens for devices; see Sync.",
   );
   pair("Version", state.version);
 

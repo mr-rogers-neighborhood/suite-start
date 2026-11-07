@@ -19,6 +19,16 @@ const actions = {
     await bridge.launch(id);
     await refresh();
   },
+  /**
+   * Install or update one app.
+   *
+   * The call resolves when the app is on disk, but the card is redrawn from what arrives
+   * while it runs — the bar is the answer, not the await.
+   */
+  async install(id) {
+    await bridge.installApp(id);
+    await refresh();
+  },
   async remove(id) {
     await bridge.removeApp(id);
     await refresh();
@@ -60,7 +70,11 @@ const actions = {
   },
 };
 
+/** The last thing main said, so a progress event can redraw the cards alone. */
+let lastState = null;
+
 function render(state) {
+  lastState = state;
   renderApps(state, actions);
   renderFiles(state, actions);
   renderSettings(state);
@@ -86,6 +100,14 @@ if (typeof bridge !== "object" || bridge === null) {
 } else {
   installRail();
   bridge.onChanged?.(render);
+
+  // A bar moves far more often than anything else in this window changes, so it arrives
+  // on its own channel and redraws only the cards.
+  bridge.onInstallProgress?.((installing) => {
+    if (lastState === null) return;
+    lastState = { ...lastState, installing };
+    renderApps(lastState, actions);
+  });
 
   document.getElementById("add").addEventListener("click", async () => {
     await bridge.addApp();

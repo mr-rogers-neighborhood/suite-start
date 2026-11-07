@@ -13,6 +13,7 @@ export declare const START_IPC: {
     readonly launch: "suite:start:launch";
     readonly addApp: "suite:start:add";
     readonly removeApp: "suite:start:remove";
+    readonly installApp: "suite:start:install";
     readonly recents: "suite:start:recents";
     readonly forgetRecent: "suite:start:forget";
     readonly openFile: "suite:start:open-file";
@@ -24,6 +25,14 @@ export declare const START_IPC: {
 };
 /** Pushed rather than invoked: the window redraws from what arrives here. */
 export declare const START_CHANGED = "suite:start:changed";
+/**
+ * Pushed while an install runs, and only then.
+ *
+ * A whole `LauncherState` carries an index of every document on this machine, which is
+ * far too much to send per downloaded chunk; this is the one thing that changes while a
+ * bar moves.
+ */
+export declare const START_INSTALL_PROGRESS = "suite:start:install-progress";
 export type StartChannel = (typeof START_IPC)[keyof typeof START_IPC];
 /** Whether an install can be launched, and why not when it cannot. */
 export type AppHealth = {
@@ -32,12 +41,39 @@ export type AppHealth = {
     readonly ok: false;
     readonly reason: string;
 };
-/** One app card, installed or refused. */
+/**
+ * What a card is offering, in the four honest states and the two corners around them.
+ *
+ * `local` is the app a person built themselves: D44 makes it first-class, so it is not
+ * a lesser card — it simply is not in the suite's catalogue, and this hub has no feed to
+ * offer it versions from. `refused` is an install that cannot be launched.
+ */
+export type AppCardState = "not-installed" | "no-release" | "update-available" | "current" | "local" | "refused";
+/** How one install is going, for the bar that replaces its button. */
+export interface InstallProgress {
+    readonly id: string;
+    readonly phase: "downloading" | "placed" | "failed";
+    /** Bytes written so far. Zero unless something is being downloaded. */
+    readonly received: number;
+    /** Bytes the feed said to expect, or null when it did not say. */
+    readonly total: number | null;
+    /** What went wrong, in the same words the card will show. */
+    readonly reason: string | null;
+}
+/** One app card, installed, offered, or refused. */
 export interface AppCard {
     /** Null for a refused install with no record, because there is nothing to act on. */
     readonly id: string | null;
     readonly name: string;
-    readonly version: string;
+    readonly state: AppCardState;
+    /** The version installed here, or null when this machine does not have it. */
+    readonly version: string | null;
+    /** The version the feed offers, when one verified. */
+    readonly available: string | null;
+    /** Why no version is offered, when none is. */
+    readonly reason: string | null;
+    /** How many versions of this app are on disk here. */
+    readonly versions: number;
     readonly channel: SuiteReleaseChannel;
     /** What the app says about its own updating, or `unknown` before it has asked. */
     readonly update: ReportedUpdate;
@@ -87,6 +123,10 @@ export interface LauncherState {
     readonly version: string;
     /** The relay this machine runs, and what it is holding. */
     readonly sync: SyncState;
+    /** Installs running right now, so a window that opens mid-install still sees the bar. */
+    readonly installing: readonly InstallProgress[];
+    /** The hub's own row, which it can show but cannot act on. */
+    readonly self: AppCard | null;
 }
 /** What the Sync pane shows. No document content, because the host has none. */
 export interface SyncState {
