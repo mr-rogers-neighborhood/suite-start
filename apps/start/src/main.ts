@@ -1,6 +1,6 @@
 import { spawn } from "node:child_process";
 import { readFile } from "node:fs/promises";
-import { dirname, join } from "node:path";
+import { dirname, join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import {
   appDocumentsFolder,
@@ -135,10 +135,17 @@ function applicationsRoot(): string {
   );
 }
 
-/** A local folder of releases, in place of the published feeds. Empty when not set. */
+/**
+ * A local feed, in place of the published ones. Empty when not set.
+ *
+ * A folder is accepted as well as a URL, and turned into one: nothing else in this
+ * process can read a path, and the point of the seam is that a person can point it at
+ * releases they built on their own machine.
+ */
 function feedBase(): string | undefined {
   const named = process.env.SUITE_START_FEED_BASE?.trim();
-  return named !== undefined && named.length > 0 ? named : undefined;
+  if (named === undefined || named.length === 0) return undefined;
+  return /^[a-z][a-z0-9+.-]*:\/\//iu.test(named) ? named : pathToFileURL(resolve(named)).toString();
 }
 
 /**
@@ -159,12 +166,18 @@ async function selfFeed(): Promise<string | null> {
 /**
  * One request per feed, and none of them may hold the window.
  *
- * A feed that hangs is a launcher that hangs if this had no ceiling; ten seconds is long
+ * `net.fetch` rather than the global: it is the only one that can read a `file:` URL, and
+ * a feed in a local folder is how an install is proven before anything is published. A
+ * feed that hangs is a launcher that hangs if this had no ceiling; ten seconds is long
  * enough for a slow network and short enough to be a reason rather than a stall.
  */
 function fetchFeed(url: string): Promise<Response> {
-  return fetch(url, { signal: AbortSignal.timeout(10_000) });
+  return net.fetch(url, { signal: AbortSignal.timeout(10_000) });
 }
+
+/** The fetch an install should use, for the same reason as `fetchFeed`. */
+const installFetch: typeof globalThis.fetch = (url, init) =>
+  net.fetch(typeof url === "string" ? url : url.toString(), init);
 
 /** What the catalogue last answered, and what is being installed right now. */
 let catalogue: readonly CatalogueApp[] = [];
@@ -505,6 +518,7 @@ async function installOne(id: string): Promise<void> {
       feed: entry.feed,
       appsRoot: applicationsRoot(),
       registry,
+      fetch: installFetch,
       onProgress: (received, total) => {
         const percent = total === null || total === 0 ? -1 : Math.floor((received / total) * 100);
         const at = Date.now();

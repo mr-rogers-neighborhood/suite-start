@@ -55,6 +55,13 @@ export interface InstallRequest {
   readonly appsRoot: string;
   readonly registry: RegistryStore;
   readonly download?: Download;
+  /**
+   * The fetch a download uses when `download` is not given.
+   *
+   * Main passes Electron's, because only that one can read a `file:` URL — which is what
+   * a feed in a local folder is.
+   */
+  readonly fetch?: typeof globalThis.fetch;
   /** Called as bytes arrive. The card's progress bar is the only consumer. */
   readonly onProgress?: DownloadProgress;
   readonly now?: () => Date;
@@ -133,28 +140,35 @@ export async function fingerprintOfFile(path: string): Promise<string> {
   return hash.digest("base64");
 }
 
-/** Streaming download: an AppImage is large, and holding one in memory is not a feature. */
-const fetchToFile: Download = async (url, destination, onProgress) => {
-  const response = await globalThis.fetch(url);
-  if (!response.ok) throw new Error(`the feed answered ${response.status}`);
-  if (response.body === null) throw new Error("the feed returned no file");
+/**
+ * Streaming download: an AppImage is large, and holding one in memory is not a feature.
+ *
+ * The fetch is a parameter so the caller can hand in Electron's `net.fetch`, which is the
+ * one that reads a `file:` URL and therefore the one that can install from a folder.
+ */
+export function downloadWith(fetchImpl: typeof globalThis.fetch = globalThis.fetch): Download {
+  return async (url, destination, onProgress) => {
+    const response = await fetchImpl(url);
+    if (!response.ok) throw new Error(`the feed answered ${response.status}`);
+    if (response.body === null) throw new Error("the feed returned no file");
 
-  const announced = Number.parseInt(response.headers.get("content-length") ?? "", 10);
-  const total = Number.isFinite(announced) ? announced : null;
-  let received = 0;
-  const counter = new Transform({
-    transform(chunk: Buffer, _encoding, callback) {
-      received += chunk.byteLength;
-      onProgress?.(received, total);
-      callback(null, chunk);
-    },
-  });
+    const announced = Number.parseInt(response.headers.get("content-length") ?? "", 10);
+    const total = Number.isFinite(announced) ? announced : null;
+    let received = 0;
+    const counter = new Transform({
+      transform(chunk: Buffer, _encoding, callback) {
+        received += chunk.byteLength;
+        onProgress?.(received, total);
+        callback(null, chunk);
+      },
+    });
 
-  // `fetch` in Electron's main process takes its types from the DOM, and `fromWeb`
-  // takes them from Node's own stream/web. They are the same object.
-  const body = response.body as unknown as import("node:stream/web").ReadableStream;
-  await pipeline(Readable.fromWeb(body), counter, createWriteStream(destination));
-};
+    // `fetch` in Electron's main process takes its types from the DOM, and `fromWeb`
+    // takes them from Node's own stream/web. They are the same object.
+    const body = response.body as unknown as import("node:stream/web").ReadableStream;
+    await pipeline(Readable.fromWeb(body), counter, createWriteStream(destination));
+  };
+}
 
 /**
  * Download, verify, place, record. The one function an Install button calls.
@@ -164,7 +178,7 @@ const fetchToFile: Download = async (url, destination, onProgress) => {
  */
 export async function installApp(request: InstallRequest): Promise<InstalledApp> {
   const { entry, version, artifact, feed, appsRoot, registry } = request;
-  const download = request.download ?? fetchToFile;
+  const download = request.download ?? downloadWith(request.fetch);
   const now = request.now ?? (() => new Date());
 
   const target = appDirectory(appsRoot, entry, version);

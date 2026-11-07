@@ -78,19 +78,19 @@ function cardActions(card, actions) {
     return buttons;
   }
 
-  if (card.id === null) return buttons;
+  // Nothing is installed, so there is nothing to open and nothing to remove.
+  if (card.id === null || card.version === null) return buttons;
 
   if (card.state === "update-available" && card.available !== null) {
     buttons.append(
       button(`Update to ${card.available}`, "primary", () => actions.install(card.id)),
     );
     buttons.append(button("Open", "quiet", () => actions.launch(card.id)));
-  } else if (card.version !== null) {
+  } else {
     buttons.append(button("Open", "primary", () => actions.launch(card.id)));
   }
 
-  const forget = button("Remove", "quiet", () => actions.remove(card.id));
-  buttons.append(forget);
+  buttons.append(button("Remove", "quiet", () => actions.remove(card.id)));
   return buttons;
 }
 
@@ -119,14 +119,9 @@ function appCard(card, actions, progress) {
   const reported = reportedLine(card);
   if (reported !== null) node.append(el("p", "card-meta card-update", reported));
 
-  if (card.state !== "not-installed") {
-    node.append(
-      el(
-        "p",
-        "card-meta",
-        `Opens ${card.fileExtensions.join(", ") || "no files"} · ${relativeTime(card.lastOpenedAt)}`,
-      ),
-    );
+  if (card.version !== null) {
+    const opens = card.fileExtensions.join(", ") || "no files";
+    node.append(el("p", "card-meta", `Opens ${opens} · ${relativeTime(card.lastOpenedAt)}`));
     node.append(el("p", "card-meta card-files", fileCountLabel(card.fileCount)));
   }
 
@@ -144,10 +139,12 @@ function selfRow(card) {
   title.append(el("span", "card-name", card.name), el("span", "card-version", card.version));
   node.append(title);
 
+  const why = card.reason ?? "no release found";
+  const sentence = `${why.charAt(0).toUpperCase()}${why.slice(1)}.`;
   const says =
     card.available !== null
-      ? `${card.available} is published; Start cannot replace its own running binary, so update it by hand.`
-      : `${card.reason ?? "no release found"} Start cannot replace its own running binary, so it updates itself.`;
+      ? `${card.available} is published. Start cannot replace its own running binary, so update it by hand.`
+      : `${sentence} Start cannot replace its own running binary, so it updates itself.`;
   node.append(el("p", "card-meta card-self-note", says));
   return node;
 }

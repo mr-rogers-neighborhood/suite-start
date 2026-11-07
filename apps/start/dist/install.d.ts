@@ -34,6 +34,13 @@ export interface InstallRequest {
     readonly appsRoot: string;
     readonly registry: RegistryStore;
     readonly download?: Download;
+    /**
+     * The fetch a download uses when `download` is not given.
+     *
+     * Main passes Electron's, because only that one can read a `file:` URL — which is what
+     * a feed in a local folder is.
+     */
+    readonly fetch?: typeof globalThis.fetch;
     /** Called as bytes arrive. The card's progress bar is the only consumer. */
     readonly onProgress?: DownloadProgress;
     readonly now?: () => Date;
@@ -53,6 +60,13 @@ export declare function manifestText(entry: CatalogueEntry, version: string, fee
 export declare function installedVersions(appsRoot: string, entry: CatalogueEntry): Promise<readonly string[]>;
 /** The base64 SHA-512 of a file, which is the form `electron-builder` writes. */
 export declare function fingerprintOfFile(path: string): Promise<string>;
+/**
+ * Streaming download: an AppImage is large, and holding one in memory is not a feature.
+ *
+ * The fetch is a parameter so the caller can hand in Electron's `net.fetch`, which is the
+ * one that reads a `file:` URL and therefore the one that can install from a folder.
+ */
+export declare function downloadWith(fetchImpl?: typeof globalThis.fetch): Download;
 /**
  * Download, verify, place, record. The one function an Install button calls.
  *
