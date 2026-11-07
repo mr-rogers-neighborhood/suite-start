@@ -127,6 +127,13 @@ export interface LauncherState {
     readonly sync: SyncState;
     /** Installs running right now, so a window that opens mid-install still sees the bar. */
     readonly installing: readonly InstallProgress[];
+    /**
+     * Launches that did not work, by app id, since this window opened.
+     *
+     * A card with a sentence here is telling the person why the window they expected never
+     * appeared, which is the one thing a launcher can say that a file manager cannot.
+     */
+    readonly launchErrors: Readonly<Record<string, string>>;
     /** The hub's own row, which it can show but cannot act on. */
     readonly self: AppCard | null;
 }

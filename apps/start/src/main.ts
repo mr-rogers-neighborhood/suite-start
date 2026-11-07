@@ -32,6 +32,7 @@ import { StartHost } from "./host.js";
 import { writeHubReport } from "./hubReport.js";
 import { installApp, installedVersions } from "./install.js";
 import { type RegistryStore, registryStore } from "./installs.js";
+import { launchVerdict } from "./launchCheck.js";
 import { defaultRoots, nodeRegistryFileSystem } from "./nodeFileSystem.js";
 import { RECENT_LIMIT, type RecentsFile, recentsFile } from "./recents.js";
 import { type RecoveryLookup, readRecoveryReports, recoveryFor } from "./recovery.js";
@@ -404,22 +405,80 @@ async function state(): Promise<LauncherState> {
     // offering a button that would fail.
     self: self === undefined ? null : selfCard(self, app.getVersion()),
     installing: [...installProgress.values()],
+    launchErrors: Object.fromEntries(launchFailures),
   };
 }
 
 /**
- * Start a process and let go of it.
+ * Launch failures, by app id, since the window opened.
  *
- * Detached, no inherited stdio, and `unref`, so an app outlives the launcher in
- * the same way a browser tab outlives the window that opened it.
+ * A launch is not an install, so this is not `installProgress`: it is a sentence the card
+ * shows until the next successful launch. Kept in memory only, because a failure that
+ * outlived the session would be a claim about a launch nobody just made.
  */
-function spawnExecutable(executable: string, argv: readonly string[]): void {
-  const child = spawn(executable, [...argv], { detached: true, stdio: "ignore" });
-  child.unref();
+const launchFailures = new Map<string, string>();
+
+/**
+ * Start a process and let go of it — watching the first moment before letting go.
+ *
+ * Detached, `unref`, and output discarded, so an app outlives the launcher the way a
+ * browser tab outlives the window that opened it. The cost of discarding output is that a
+ * binary which dies immediately is indistinguishable from one that opened and stayed:
+ * the card still says Open and nothing moved. So stderr is kept for the first second and
+ * a half, which is long enough to catch a missing library and short enough to stay
+ * invisible for an app that started.
+ *
+ * A failure to mount is retried once with `APPIMAGE_EXTRACT_AND_RUN=1` instead of being
+ * reported. The person pressed Open; they did not ask to learn about FUSE.
+ */
+function spawnExecutable(executable: string, argv: readonly string[], appId?: string): void {
+  const child = spawn(executable, [...argv], {
+    detached: true,
+    stdio: ["ignore", "ignore", "pipe"],
+  });
+
+  let stderr = "";
+  child.stderr?.setEncoding("utf8");
+  child.stderr?.on("data", (chunk: string) => {
+    if (stderr.length < 8192) stderr += chunk;
+  });
+
+  let settled = false;
+  const settle = (): void => {
+    settled = true;
+    child.stderr?.removeAllListeners("data");
+    child.stderr?.destroy();
+    child.unref();
+    if (appId !== undefined && launchFailures.delete(appId)) void broadcast();
+  };
+  setTimeout(settle, 1_500);
+
+  child.once("exit", (code) => {
+    if (settled) return;
+    settled = true;
+    const verdict = launchVerdict({ executable, exitCode: code, stderr });
+
+    if (verdict.kind === "retry-without-fuse") {
+      console.warn(`[launch] ${executable}: ${verdict.reason}; retrying without FUSE 2`);
+      spawn(executable, [...argv], {
+        detached: true,
+        stdio: "ignore",
+        env: { ...process.env, APPIMAGE_EXTRACT_AND_RUN: "1" },
+      }).unref();
+      child.unref();
+      return;
+    }
+
+    child.unref();
+    if (appId === undefined || verdict.kind === "ok") return;
+    console.warn(`[launch] ${executable}: ${verdict.reason}`);
+    launchFailures.set(appId, verdict.reason);
+    void broadcast();
+  });
 }
 
 function spawnApp(app_: DiscoveredApp, argv: readonly string[]): void {
-  spawnExecutable(app_.executable, argv);
+  spawnExecutable(app_.executable, argv, app_.manifest.id);
 }
 
 /** Resolve one target and start the app that owns it. */

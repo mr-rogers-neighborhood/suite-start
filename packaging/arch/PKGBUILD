@@ -1,0 +1,96 @@
+# Maintainer: Suite contributors <maintainers@suite.run>
+#
+# An Arch package for the hub, built from the AppImage this project already publishes
+# and signs. Nothing is recompiled: `source=` is the exact artifact the release feed
+# names, so the package and the feed cannot disagree about what a version is.
+#
+# `-bin` is the Arch convention for a package that repackages an upstream binary, and
+# it is the honest name here. The package is not in any index; it is attached to the
+# GitHub release beside the AppImage, and installed with `sudo pacman -U`.
+#
+# The AppImage is extracted rather than mounted, which is why `fuse2` is not a
+# dependency: the hub runs from `/opt` like any other packaged program. Apps that the
+# hub installs stay AppImages in ~/Applications/Suite, because the hub is what replaces
+# them — see docs/how-to/package.md.
+
+pkgname=suite-start-bin
+pkgver=0.3.0
+pkgrel=1
+pkgdesc='The Suite hub: installs, updates and opens the Suite apps'
+arch=('x86_64')
+url='https://github.com/mr-rogers-neighborhood/suite-start'
+license=('MIT')
+
+# The Electron runtime's own Arch dependencies, checked against `pacman -Ss` rather
+# than copied from a generator: the pacman target electron-builder ships names
+# `http-parser`, which Arch does not carry.
+depends=(
+  alsa-lib
+  at-spi2-core
+  cairo
+  expat
+  gtk3
+  libcups
+  libdrm
+  libnotify
+  libxcomposite
+  libxdamage
+  libxkbcommon
+  libxrandr
+  libxss
+  mesa
+  nss
+  pango
+  xdg-utils
+)
+
+# The AppImage's payload is a prebuilt Electron tree; stripping it is pointless at
+# best and destructive at worst.
+options=(!strip)
+
+# Tag-pinned, not `latest/download`: a package that silently changes contents when a
+# newer release appears is not reproducible, and `sha256sums` would be wrong for it.
+source=("$pkgname-$pkgver.AppImage::https://github.com/mr-rogers-neighborhood/suite-start/releases/download/start-v$pkgver/suite-start-$pkgver-x86_64.AppImage")
+sha256sums=('577c510da3cd3ff532e92b46ee6ca0b2e17f80f0c64102bc2276562ca3529b1d')
+
+package() {
+  cd "$srcdir"
+
+  # `--appimage-extract` needs no FUSE, which is the whole point of this package.
+  ./"$pkgname-$pkgver.AppImage" --appimage-extract >/dev/null
+
+  install -dm755 "$pkgdir/opt/suite-start"
+  cp -a squashfs-root/. "$pkgdir/opt/suite-start/"
+
+  # AppImage runtime artefacts: the wrapper script, the relative desktop entry, and
+  # the copy of `/usr/share` the image carries (its icons are installed below, under
+  # the names the rest of the system uses). None of them means anything inside /opt.
+  rm -rf "$pkgdir/opt/suite-start/AppRun" \
+         "$pkgdir/opt/suite-start/.DirIcon" \
+         "$pkgdir/opt/suite-start/suite-start.desktop" \
+         "$pkgdir/opt/suite-start/usr"
+
+  # Electron's sandbox helper must be root-owned and setuid, or the renderer sandbox
+  # is unavailable and Chromium needs --no-sandbox. A package can do this properly,
+  # which is one thing it does better than the AppImage.
+  chmod 4755 "$pkgdir/opt/suite-start/chrome-sandbox"
+
+  # The icons the AppImage already carries, at every size it ships.
+  install -d "$pkgdir/usr/share/icons"
+  cp -a squashfs-root/usr/share/icons/. "$pkgdir/usr/share/icons/"
+
+  install -dm755 "$pkgdir/usr/share/applications"
+  cat > "$pkgdir/usr/share/applications/suite-start.desktop" <<EOF
+[Desktop Entry]
+Name=Suite Start
+GenericName=Suite Hub
+Comment=Installs, updates and opens the Suite apps
+Exec=/opt/suite-start/suite-start %U
+Terminal=false
+Type=Application
+Icon=suite-start
+StartupWMClass=Suite Start
+MimeType=x-scheme-handler/suite;
+Categories=Utility;
+EOF
+}

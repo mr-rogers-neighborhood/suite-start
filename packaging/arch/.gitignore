@@ -1,0 +1,6 @@
+# makepkg writes these beside the PKGBUILD. They are build output, not source: the
+# AppImage it downloads is a release asset, and the package it produces is attached to
+# that release rather than committed.
+*
+!PKGBUILD
+!.gitignore

@@ -94,7 +94,7 @@ function cardActions(card, actions) {
   return buttons;
 }
 
-function appCard(card, actions, progress) {
+function appCard(card, actions, progress, launchError) {
   const node = el("li", card.health.ok ? "card" : "card card-refused");
   if (card.id !== null) node.dataset.appId = card.id;
   node.dataset.state = card.state;
@@ -108,12 +108,11 @@ function appCard(card, actions, progress) {
     return node;
   }
 
-  const line = el(
-    "p",
-    "card-meta card-state",
-    progress?.phase === "failed" ? progress.reason : stateLine(card),
-  );
-  if (progress?.phase === "failed") line.dataset.state = "failed";
+  // An install that failed and a launch that died share one slot: it is the sentence
+  // that explains why the thing the person pressed did not happen.
+  const problem = progress?.phase === "failed" ? progress.reason : (launchError ?? null);
+  const line = el("p", "card-meta card-state", problem ?? stateLine(card));
+  if (problem !== null) line.dataset.state = "failed";
   node.append(line);
 
   const reported = reportedLine(card);
@@ -176,9 +175,17 @@ export function renderApps(state, actions) {
   list.replaceChildren();
 
   const progressById = new Map((state.installing ?? []).map((entry) => [entry.id, entry]));
+  const launchErrors = state.launchErrors ?? {};
   empty.hidden = state.apps.length > 0;
   for (const card of state.apps) {
-    list.append(appCard(card, actions, card.id === null ? undefined : progressById.get(card.id)));
+    list.append(
+      appCard(
+        card,
+        actions,
+        card.id === null ? undefined : progressById.get(card.id),
+        card.id === null ? null : (launchErrors[card.id] ?? null),
+      ),
+    );
   }
   if (state.self) list.append(selfRow(state.self));
 }
