@@ -16,6 +16,12 @@ directories:
   output: release
   buildResources: build
 
+# The window's own icon comes from here at runtime: the desktop entry's icon and the
+# taskbar icon have different sources, and only the entry reads the hicolor theme.
+extraResources:
+  - from: build/icon.png
+    to: icon.png
+
 files:
   - dist/**/*
   - package.json
@@ -38,6 +44,9 @@ linux:
   target:
     - AppImage
     - deb
+  # The package declares its own desktop entry, so the shell must agree with it about
+  # WM_CLASS or a panel draws a second, generic icon for the same window.
+  syncDesktopName: true
   category: Utility
   synopsis: The Suite hub
   description: Discovers installed Suite apps, opens their documents and routes suite:// links.

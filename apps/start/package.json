@@ -2,6 +2,7 @@
   "name": "@suite/start",
   "version": "0.3.2",
   "productName": "Suite Start",
+  "desktopName": "suite-start.desktop",
   "private": true,
   "description": "The Suite launcher: discovers installed apps from signed manifests, routes suite:// links and files, and starts the right process. It never holds a document.",
   "type": "module",

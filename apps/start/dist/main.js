@@ -1,4 +1,5 @@
 import { spawn } from "node:child_process";
+import { existsSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import { dirname, join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
@@ -21,6 +22,7 @@ import { readReportedUpdate } from "./reportedUpdate.js";
 import { describeRouteRejection, routeLaunch } from "./route.js";
 import { START_CHANGED, START_INSTALL_PROGRESS, START_IPC, } from "./shared.js";
 import { checkForUpdates } from "./updateCheck.js";
+import { resolveWindowIcon } from "./windowIcon.js";
 /**
  * Suite Start.
  *
@@ -538,7 +540,22 @@ async function installOne(id) {
         });
     }
 }
+/** The window's own icon: a different source from the desktop entry's (§windowIcon). */
+function windowIcon() {
+    const icon = resolveWindowIcon({
+        isPackaged: app.isPackaged,
+        resourcesPath: process.resourcesPath,
+        appPath: appDir(),
+        exists: (path) => existsSync(path),
+    });
+    if (icon === null)
+        console.warn("[start] no window icon to load");
+    else if (icon.reason !== null)
+        console.warn(`[start] ${icon.reason}; using ${icon.path}`);
+    return icon?.path ?? null;
+}
 function createWindow() {
+    const icon = windowIcon();
     const created = new BrowserWindow({
         width: 880,
         height: 620,
@@ -546,6 +563,7 @@ function createWindow() {
         minHeight: 420,
         show: false,
         backgroundColor: "#ffffff",
+        ...(icon === null ? {} : { icon }),
         webPreferences: {
             preload: join(appDir(), "dist", "preload", "index.cjs"),
             sandbox: true,
