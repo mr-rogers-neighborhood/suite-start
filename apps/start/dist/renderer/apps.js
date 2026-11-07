@@ -114,6 +114,11 @@ function appCard(card, actions, progress, launchError) {
 
   const title = el("div", "card-title");
   title.append(el("span", "card-name", card.name));
+  // What the app honestly is, said quietly. A release channel is a promise about how much
+  // to trust the thing; hiding it until someone reads the release notes is not a favour.
+  if (card.channel !== "stable") {
+    title.append(el("span", "card-channel", card.channel));
+  }
   node.append(title);
 
   if (!card.health.ok) {
