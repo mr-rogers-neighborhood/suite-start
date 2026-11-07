@@ -7,7 +7,7 @@
  * is where a file lives and what it is called, so a person can find their work
  * and a hub can list it without owning it.
  *
- * Two roots, and the split is the decision:
+ * Three roots, and the split is the decision:
  *
  * - **documents** live under `~/Documents/Suite/<App>`. A person looks there, so a
  *   file can be copied, backed up, or put in a folder their own cloud already
@@ -16,6 +16,9 @@
  *   state belong here and never beside a document: a lock in a synced folder
  *   carries another machine's process id, and every sync then looks like a
  *   contended file.
+ * - **applications** live under `~/Applications/Suite/<App>/<version>`. An install
+ *   is neither a document nor state: it is the app itself, replaced wholesale by a
+ *   newer version, so it gets a root of its own rather than sharing either.
  *
  * Backups stay beside the document, because "recover with a file manager when the
  * app is the thing that broke" is a promise an app makes when it writes one.
@@ -33,6 +36,13 @@ export interface SuitePaths {
   readonly documents: string;
   /** Machine-local state: locks, caches, and anything that must not sync. */
   readonly data: string;
+  /**
+   * Where Start installs apps, one folder per app and version under it.
+   *
+   * Suite-wide rather than per app: it is the same root for every app, and an app
+   * reads it only to know where its own install was placed.
+   */
+  readonly applications: string;
   /** Where a document's lock file belongs. Always under `data`. */
   readonly locks: string;
 }
@@ -53,6 +63,8 @@ export interface SuitePathOptions {
   readonly documentsOverride?: string | undefined;
   /** Overrides the data root, for the same reasons. */
   readonly dataOverride?: string | undefined;
+  /** Overrides the applications root, for the same reasons. */
+  readonly applicationsOverride?: string | undefined;
   /** `XDG_DATA_HOME`, which the caller reads from the environment. */
   readonly xdgDataHome?: string | undefined;
 }
@@ -100,7 +112,24 @@ function dataRoot(app: SuiteAppName, options: SuitePathOptions): string {
 }
 
 /**
- * Resolve an app's two roots.
+ * The root every install sits under.
+ *
+ * One convention on every platform, because D46 named one: `~/Applications/Suite`.
+ * An override exists for a test and for a portable install, and it is never read
+ * from a document, so no file can steer where an install lands.
+ */
+export function suiteApplicationsRoot(
+  platform: SuitePlatform,
+  home: string,
+  rootOverride?: string | undefined,
+): string {
+  const named = rootOverride?.trim();
+  if (named !== undefined && named.length > 0) return named;
+  return joinPath(platform, home, "Applications", "Suite");
+}
+
+/**
+ * Resolve an app's three roots.
  *
  * An override is never read from a document, so no file can steer a write. It
  * exists for a test and for a portable install, and both are the caller's own
@@ -115,6 +144,7 @@ export function suitePaths(app: SuiteAppName, options: SuitePathOptions): SuiteP
   return {
     documents,
     data,
+    applications: suiteApplicationsRoot(platform, options.home, options.applicationsOverride),
     locks: joinPath(platform, data, "locks"),
   };
 }

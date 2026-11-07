@@ -4,7 +4,7 @@ export { DEFAULT_APP_IDS, deepLinkPrefix, formatDeepLink, parseDeepLink, SUITE_P
 export { deploymentAllows, parseDeployment, relayFor, SUITE_DEPLOYMENT_FORMAT, SUITE_DEPLOYMENT_FORMAT_VERSION, sellsPlans, suiteDeploymentAuthSchema, suiteDeploymentFeaturesSchema, suiteDeploymentSchema, } from "./deployment.js";
 export { hubReportPath, parseHubState, SUITE_HUB_FILE, SUITE_HUB_FORMAT, suiteHubSchema, suiteHubScopeSchema, } from "./hub.js";
 export { describeIssues, parseWith, } from "./parse.js";
-export { joinPath, suitePaths, } from "./paths.js";
+export { joinPath, suiteApplicationsRoot, suitePaths, } from "./paths.js";
 export { appDocumentsFolder, SUITE_APPS, suiteDocumentsRoot, } from "./suiteApps.js";
 export { mergeKitReports, parseSyncKits, SUITE_SYNC_KITS_FILE, SUITE_SYNC_KITS_FORMAT, suiteSyncKitsSchema, syncKitReportSchema, syncKitStateSchema, syncKitsReportPath, } from "./syncKits.js";
 export { parseUpdateState, SUITE_UPDATE_STATE_FILE, SUITE_UPDATE_STATE_FORMAT, suiteUpdateStateSchema, updateAvailable, } from "./updateState.js";

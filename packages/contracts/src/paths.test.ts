@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { joinPath, suitePaths } from "./paths.js";
+import { joinPath, suiteApplicationsRoot, suitePaths } from "./paths.js";
 
 const home = "/home/me";
 
@@ -7,6 +7,16 @@ describe("suitePaths", () => {
   it("puts documents where a person looks", () => {
     const paths = suitePaths("Canvas", { platform: "linux", home });
     expect(paths.documents).toBe("/home/me/Documents/Suite/Canvas");
+  });
+
+  it("puts installed apps under the applications root, which every app shares", () => {
+    const canvas = suitePaths("Canvas", { platform: "linux", home });
+    const planner = suitePaths("Planner", { platform: "linux", home });
+    expect(canvas.applications).toBe("/home/me/Applications/Suite");
+    expect(planner.applications).toBe(canvas.applications);
+    // An install is neither a person's work nor machine state.
+    expect(canvas.applications.startsWith(canvas.documents)).toBe(false);
+    expect(canvas.applications.startsWith(canvas.data)).toBe(false);
   });
 
   it("keeps machine state out of the documents folder", () => {
@@ -37,9 +47,11 @@ describe("suitePaths", () => {
       home,
       documentsOverride: "/tmp/lib",
       dataOverride: "/tmp/data",
+      applicationsOverride: "/tmp/apps",
     });
     expect(paths.documents).toBe("/tmp/lib");
     expect(paths.locks).toBe("/tmp/data/locks");
+    expect(paths.applications).toBe("/tmp/apps");
   });
 
   it("names each app's own folder, so three apps never share one", () => {
@@ -47,6 +59,21 @@ describe("suitePaths", () => {
     const planner = suitePaths("Planner", { platform: "linux", home });
     expect(canvas.documents).not.toBe(planner.documents);
     expect(canvas.data).not.toBe(planner.data);
+  });
+});
+
+describe("suiteApplicationsRoot", () => {
+  it("uses one convention on every platform, because there is one decision", () => {
+    expect(suiteApplicationsRoot("linux", "/home/me")).toBe("/home/me/Applications/Suite");
+    expect(suiteApplicationsRoot("darwin", "/Users/me")).toBe("/Users/me/Applications/Suite");
+    expect(suiteApplicationsRoot("win32", "C:\\Users\\me")).toBe(
+      "C:\\Users\\me\\Applications\\Suite",
+    );
+  });
+
+  it("takes an override, and ignores a blank one", () => {
+    expect(suiteApplicationsRoot("linux", "/home/me", "/tmp/apps")).toBe("/tmp/apps");
+    expect(suiteApplicationsRoot("linux", "/home/me", "   ")).toBe("/home/me/Applications/Suite");
   });
 });
 

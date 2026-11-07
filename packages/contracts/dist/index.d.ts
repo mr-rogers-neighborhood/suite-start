@@ -4,7 +4,7 @@ export { DEFAULT_APP_IDS, type DeepLinkParse, type DeepLinkRejection, deepLinkPr
 export { deploymentAllows, parseDeployment, relayFor, SUITE_DEPLOYMENT_FORMAT, SUITE_DEPLOYMENT_FORMAT_VERSION, type SuiteDeployment, type SuiteDeploymentFeature, sellsPlans, suiteDeploymentAuthSchema, suiteDeploymentFeaturesSchema, suiteDeploymentSchema, } from "./deployment.js";
 export { hubReportPath, parseHubState, SUITE_HUB_FILE, SUITE_HUB_FORMAT, type SuiteHub, type SuiteHubScope, suiteHubSchema, suiteHubScopeSchema, } from "./hub.js";
 export { type ContractIssue, type ContractParse, describeIssues, parseWith, } from "./parse.js";
-export { joinPath, type SuiteAppName, type SuitePathOptions, type SuitePaths, type SuitePlatform, suitePaths, } from "./paths.js";
+export { joinPath, type SuiteAppName, type SuitePathOptions, type SuitePaths, type SuitePlatform, suiteApplicationsRoot, suitePaths, } from "./paths.js";
 export { appDocumentsFolder, SUITE_APPS, type SuiteAppDocumentsOptions, type SuiteAppEntry, type SuiteDocumentAppId, suiteDocumentsRoot, } from "./suiteApps.js";
 export { mergeKitReports, parseSyncKits, SUITE_SYNC_KITS_FILE, SUITE_SYNC_KITS_FORMAT, type SuiteSyncKits, type SyncKitReport, type SyncKitState, suiteSyncKitsSchema, syncKitReportSchema, syncKitStateSchema, syncKitsReportPath, } from "./syncKits.js";
 export { parseUpdateState, SUITE_UPDATE_STATE_FILE, SUITE_UPDATE_STATE_FORMAT, type SuiteUpdateState, suiteUpdateStateSchema, updateAvailable, } from "./updateState.js";

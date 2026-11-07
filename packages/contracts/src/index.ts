@@ -70,6 +70,7 @@ export {
   type SuitePathOptions,
   type SuitePaths,
   type SuitePlatform,
+  suiteApplicationsRoot,
   suitePaths,
 } from "./paths.js";
 export {
