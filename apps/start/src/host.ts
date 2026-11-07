@@ -1,3 +1,4 @@
+import { networkInterfaces } from "node:os";
 import { join } from "node:path";
 import {
   createSyncServer,
@@ -103,12 +104,28 @@ export class StartHost {
     return wasRunning ? this.start() : this.state();
   }
 
+  /**
+   * The address a device would be given.
+   *
+   * Not the one the listener is bound to. A host on `0.0.0.0` is reachable at one of this
+   * machine's interface addresses and only the machine knows which, so reporting the bind
+   * address would hand a person a link that works nowhere.
+   */
+  private advertised(): string | null {
+    if (this.server === null) return null;
+    const port = this.server.port;
+    if (this.scope === "loopback") return `ws://127.0.0.1:${port}/sync`;
+    // No interface address on a machine that is off the network. Loopback is then a true
+    // answer for this machine, and the invitation it produces simply will not travel.
+    return `ws://${firstLanAddress() ?? "127.0.0.1"}:${port}/sync`;
+  }
+
   state(): HostState {
     const running = this.server !== null;
     return {
       running,
       scope: this.scope,
-      address: running ? (this.server?.url ?? null) : null,
+      address: this.advertised(),
       port: running ? (this.server?.port ?? this.port) : this.port,
       workspaces: running ? this.workspaces() : [],
     };
@@ -128,6 +145,16 @@ export class StartHost {
         })),
     }));
   }
+}
+
+/** The first address another machine on this network could reach, if there is one. */
+function firstLanAddress(): string | null {
+  for (const entries of Object.values(networkInterfaces())) {
+    for (const entry of entries ?? []) {
+      if (entry.family === "IPv4" && !entry.internal) return entry.address;
+    }
+  }
+  return null;
 }
 
 /** The id a device id must equal, given the key it presented. */

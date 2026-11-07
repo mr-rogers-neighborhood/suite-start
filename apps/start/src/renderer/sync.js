@@ -12,6 +12,13 @@ import { el } from "./format.js";
  * instead of the state makes the state harder to find.
  */
 
+/** What to say about a way back in, in a person's words. */
+const RECOVERY_WORDS = {
+  made: "A way back in has been saved for this workspace.",
+  declined: "No way back in was saved. Every device would have to be recovered by hand.",
+  none: "No way back in has been saved on this machine.",
+};
+
 const ROLE_WORDS = {
   owner: "owner",
   editor: "editor",
@@ -127,6 +134,8 @@ function workspaceBlock(sync) {
           : `${workspace.frames} ${workspace.frames === 1 ? "change" : "changes"} passed through.`,
       ),
     );
+
+    item.append(el("p", "pane-note", RECOVERY_WORDS[workspace.recovery ?? "none"]));
 
     const members = el("ul", "sync-members");
     for (const member of workspace.members) {

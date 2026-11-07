@@ -3,9 +3,11 @@ import { dirname, join } from "node:path";
 import { pathToFileURL } from "node:url";
 import {
   appDocumentsFolder,
+  hubReportPath,
   parseDeepLink,
   SUITE_APPS,
   type SuiteAppEntry,
+  type SuiteHub,
   suiteDocumentsRoot,
 } from "@suite/contracts";
 import { desktopCsp, isTrustedSender, resolveProtocolAsset } from "@suite/desktop";
@@ -13,9 +15,11 @@ import { app, BrowserWindow, dialog, ipcMain, Menu, net, protocol, shell } from 
 import { appCards, fileCards } from "./cards.js";
 import { type DocumentsFolder, indexDocuments, isInsideDocuments } from "./fileIndex.js";
 import { StartHost } from "./host.js";
+import { writeHubReport } from "./hubReport.js";
 import { type RegistryStore, registryStore } from "./installs.js";
 import { defaultRoots, nodeRegistryFileSystem } from "./nodeFileSystem.js";
 import { RECENT_LIMIT, type RecentsFile, recentsFile } from "./recents.js";
+import { type RecoveryLookup, readRecoveryReports, recoveryFor } from "./recovery.js";
 import { appById, type DiscoveredApp, discoverApps, type InstallRecord } from "./registry.js";
 import { checkFeed } from "./releaseFeed.js";
 import {
@@ -87,6 +91,8 @@ let registry: RegistryStore;
 let recents: RecentsFile;
 let dataDirectory = "";
 let syncHost: StartHost | null = null;
+/** The report already on disk, so a restart is visible as a new `startedAt` rather than a new one. */
+let previousHub: SuiteHub | null = null;
 
 /** Files and links handed over before the window exists. */
 const pendingTargets: string[] = [];
@@ -172,11 +178,63 @@ function syncPort(): number {
   return Number.isInteger(parsed) && parsed >= 0 && parsed <= 65535 ? parsed : 8787;
 }
 
-function syncState(): SyncState {
-  if (syncHost === null) {
-    return { running: false, scope: "loopback", address: null, port: 8787, workspaces: [] };
-  }
-  return syncHost.state();
+/**
+ * The sync pane's state, with the one thing the host cannot know.
+ *
+ * The host carries frames and knows who may write; whether anybody kept a way back in is a
+ * fact about the apps on this machine, so it is read from their own reports and folded in
+ * here rather than pretended to by the mailbox.
+ */
+async function syncState(): Promise<SyncState> {
+  const host = syncHost?.state() ?? null;
+  const reports = await readRecoveryReports(recoveryLookup(), nodeRegistryFileSystem());
+  return {
+    running: host?.running ?? false,
+    scope: host?.scope ?? "loopback",
+    address: host?.address ?? null,
+    port: host?.port ?? 8787,
+    workspaces: (host?.workspaces ?? []).map((workspace) => ({
+      ...workspace,
+      recovery: recoveryFor(reports, workspace.workspaceId),
+    })),
+  };
+}
+
+function recoveryLookup(): RecoveryLookup {
+  return {
+    platform: process.platform,
+    home: app.getPath("home"),
+    xdgDataHome: process.env.XDG_DATA_HOME,
+  };
+}
+
+/**
+ * Tell the other apps where this machine listens, in the one place they can read it.
+ *
+ * Written whenever the host changes, because a stale address is worse than none: an app that
+ * prefilled a share field from a hub that has since stopped would hand out a link to nothing.
+ */
+async function reportHub(): Promise<void> {
+  const state =
+    syncHost === null
+      ? { running: false, scope: "loopback" as const, address: null, port: syncPort() }
+      : syncHost.state();
+  const now = new Date().toISOString();
+  const report: SuiteHub = {
+    format: "suite.hub",
+    running: state.running,
+    scope: state.scope,
+    port: state.port,
+    address: state.address,
+    startedAt: state.running
+      ? previousHub?.running === true
+        ? (previousHub.startedAt ?? now)
+        : now
+      : null,
+    updatedAt: now,
+  };
+  previousHub = report;
+  await writeHubReport(hubReportPath(recoveryLookup()), report);
 }
 
 async function state(): Promise<LauncherState> {
@@ -231,7 +289,7 @@ async function state(): Promise<LauncherState> {
     files: fileCards(files),
     settings: { dataDirectory, documentsRoot: documentsRoot(), installRoots: roots() },
     version: app.getVersion(),
-    sync: syncState(),
+    sync: await syncState(),
   };
 }
 
@@ -402,12 +460,18 @@ function registerIpc(): void {
   onIpc(START_IPC.startSync, async () => {
     syncHost ??= new StartHost({ dataDir: dataDirectory, port: syncPort() });
     await syncHost.start();
+    await reportHub().catch((error: unknown) => {
+      console.warn("[sync] could not report the hub's address", error);
+    });
     await broadcast();
     return syncState();
   });
 
   onIpc(START_IPC.stopSync, async () => {
     await syncHost?.stop();
+    await reportHub().catch((error: unknown) => {
+      console.warn("[sync] could not report the hub's address", error);
+    });
     await broadcast();
     return syncState();
   });
@@ -416,6 +480,9 @@ function registerIpc(): void {
     if (scope !== "loopback" && scope !== "network") return syncState();
     syncHost ??= new StartHost({ dataDir: dataDirectory, port: syncPort() });
     await syncHost.setScope(scope);
+    await reportHub().catch((error: unknown) => {
+      console.warn("[sync] could not report the hub's address", error);
+    });
     await broadcast();
     return syncState();
   });
@@ -505,6 +572,10 @@ if (!gotLock) {
     await syncHost.start().catch((error: unknown) => {
       console.warn("[sync] the host did not start", error);
     });
+    // Before the window opens: an app that reads this at launch should find today's answer.
+    await reportHub().catch((error: unknown) => {
+      console.warn("[sync] could not report the hub's address", error);
+    });
 
     // The hub owns `suite://`; every other app is reached through it. An
     // installed package declares the scheme in its desktop entry, an AppImage
@@ -572,7 +643,11 @@ if (!gotLock) {
   });
 
   app.on("before-quit", () => {
-    void syncHost?.stop();
+    // Best effort: a report that says the hub is still up would be a lie a reader acts on.
+    void syncHost
+      ?.stop()
+      .then(() => reportHub())
+      .catch(() => undefined);
   });
 
   app.on("window-all-closed", () => {

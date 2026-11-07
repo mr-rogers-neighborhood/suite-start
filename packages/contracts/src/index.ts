@@ -49,6 +49,16 @@ export {
   suiteDeploymentSchema,
 } from "./deployment.js";
 export {
+  hubReportPath,
+  parseHubState,
+  SUITE_HUB_FILE,
+  SUITE_HUB_FORMAT,
+  type SuiteHub,
+  type SuiteHubScope,
+  suiteHubSchema,
+  suiteHubScopeSchema,
+} from "./hub.js";
+export {
   type ContractIssue,
   type ContractParse,
   describeIssues,
@@ -70,6 +80,19 @@ export {
   type SuiteDocumentAppId,
   suiteDocumentsRoot,
 } from "./suiteApps.js";
+export {
+  mergeKitReports,
+  parseSyncKits,
+  SUITE_SYNC_KITS_FILE,
+  SUITE_SYNC_KITS_FORMAT,
+  type SuiteSyncKits,
+  type SyncKitReport,
+  type SyncKitState,
+  suiteSyncKitsSchema,
+  syncKitReportSchema,
+  syncKitStateSchema,
+  syncKitsReportPath,
+} from "./syncKits.js";
 export {
   parseUpdateState,
   SUITE_UPDATE_STATE_FILE,

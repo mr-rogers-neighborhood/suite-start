@@ -36,7 +36,9 @@ describe("the host Start runs", () => {
     const widened = await host.setScope("network");
     expect(widened.scope).toBe("network");
     expect(widened.running).toBe(true);
-    expect(widened.address).toContain("0.0.0.0");
+    // A device is given an interface address, never the bind address: 0.0.0.0 is not a place.
+    expect(widened.address).not.toContain("0.0.0.0");
+    expect(widened.address).toMatch(/^ws:\/\/[0-9.]+:[0-9]+\/sync$/);
 
     const narrowed = await host.setScope("loopback");
     expect(narrowed.address).toContain("127.0.0.1");

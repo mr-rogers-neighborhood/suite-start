@@ -109,6 +109,13 @@ export interface SyncWorkspace {
   readonly frames: number;
   readonly newestEpoch: number | null;
   readonly members: readonly SyncMember[];
+  /**
+   * Whether any app on this machine kept a way back in for this workspace.
+   *
+   * Read from the apps' own reports, not from the host: the hub carries frames and cannot
+   * know what a device saved, and a pane that guessed would be worse than one that is quiet.
+   */
+  readonly recovery: "made" | "declined" | "none";
 }
 
 export interface SyncMember {

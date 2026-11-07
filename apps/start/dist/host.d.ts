@@ -52,6 +52,14 @@ export declare class StartHost {
      * alternative is a host that claims to be loopback while still answering the network.
      */
     setScope(scope: HostScope): Promise<HostState>;
+    /**
+     * The address a device would be given.
+     *
+     * Not the one the listener is bound to. A host on `0.0.0.0` is reachable at one of this
+     * machine's interface addresses and only the machine knows which, so reporting the bind
+     * address would hand a person a link that works nowhere.
+     */
+    private advertised;
     state(): HostState;
     private workspaces;
 }
