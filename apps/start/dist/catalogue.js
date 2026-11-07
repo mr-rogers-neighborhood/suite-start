@@ -66,6 +66,7 @@ export const SELF_ENTRY = {
     capabilities: [],
     feed: "",
     channel: "alpha",
+    releases: "https://github.com/mr-rogers-neighborhood/suite-start/releases/latest",
 };
 /**
  * The feed to read for one entry.

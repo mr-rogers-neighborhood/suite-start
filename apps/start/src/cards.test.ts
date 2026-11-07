@@ -267,18 +267,30 @@ describe("appCards", () => {
 });
 
 describe("selfCard", () => {
-  it("is a fact about the hub, with nothing to press", () => {
+  it("asks for nothing itself, and offers the page where a newer build lives", () => {
     const card = selfCard(
-      offered({ id: "start", name: "Suite Start", available: "0.3.1", feed: "https://x" }),
+      offered({
+        id: "start",
+        name: "Suite Start",
+        available: "0.3.1",
+        feed: "https://x",
+        releases: "https://github.com/o/r/releases/latest",
+      }),
       "0.3.0",
     );
     expect(card).toMatchObject({
       id: "start",
-      state: "current",
+      state: "update-available",
       version: "0.3.0",
       available: "0.3.1",
+      releases: "https://github.com/o/r/releases/latest",
       executable: null,
     });
+  });
+
+  it("is up to date when the running version is the published one", () => {
+    const card = selfCard(offered({ id: "start", available: "0.3.0" }), "0.3.0");
+    expect(card.state).toBe("current");
   });
 
   it("says when the hub's own feed offered nothing", () => {

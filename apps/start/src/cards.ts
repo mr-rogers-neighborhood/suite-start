@@ -1,5 +1,5 @@
 import { workspaceLink } from "@suite/contracts";
-import { type CatalogueApp, SELF_ID } from "./catalogue.js";
+import { type CatalogueApp, isNewer, SELF_ID } from "./catalogue.js";
 import type { IndexedFile } from "./fileIndex.js";
 import type { RecentEntry } from "./recents.js";
 import type { DiscoveredApp, RejectedInstall } from "./registry.js";
@@ -64,6 +64,7 @@ export function appCards(input: CardInput): readonly AppCard[] {
     available: null,
     reason: install.reason,
     versions: 0,
+    releases: null,
     channel: "stable",
     update: UNREPORTED,
     executable: null,
@@ -88,6 +89,7 @@ export function appCards(input: CardInput): readonly AppCard[] {
         available: entry.available,
         reason: entry.reason,
         versions: input.versions.get(entry.id) ?? (found === null ? 0 : 1),
+        releases: entry.releases ?? null,
         channel: found?.manifest.update?.channel ?? entry.channel,
         update: input.updates.get(entry.id) ?? UNREPORTED,
         executable: found?.executable ?? null,
@@ -108,6 +110,7 @@ export function appCards(input: CardInput): readonly AppCard[] {
     available: null,
     reason: null,
     versions: input.versions.get(entry.manifest.id) ?? 1,
+    releases: null,
     channel: entry.manifest.update?.channel ?? "stable",
     update: input.updates.get(entry.manifest.id) ?? UNREPORTED,
     executable: entry.executable,
@@ -130,11 +133,17 @@ export function selfCard(entry: CatalogueApp, version: string): AppCard {
   return {
     id: SELF_ID,
     name: entry.name,
-    state: entry.available === null ? "no-release" : "current",
+    state:
+      entry.available === null
+        ? "no-release"
+        : isNewer(entry.available, version)
+          ? "update-available"
+          : "current",
     version,
     available: entry.available,
     reason: entry.reason,
     versions: 1,
+    releases: entry.releases ?? null,
     channel: entry.channel,
     update: UNREPORTED,
     executable: null,

@@ -30,6 +30,13 @@ export interface CatalogueEntry {
     /** The app's own declared feed. Blank for the hub, whose feed is read at runtime. */
     readonly feed: string;
     readonly channel: SuiteReleaseChannel;
+    /**
+     * Where a person can fetch a newer build by hand.
+     *
+     * Only the hub has one: every other app's update is a button Start can press, and the
+     * hub cannot replace its own running binary.
+     */
+    readonly releases?: string | undefined;
 }
 /** The hub's own id. It is not one of the apps the hub lists. */
 export declare const SELF_ID = "start";

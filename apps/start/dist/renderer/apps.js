@@ -142,10 +142,23 @@ function selfRow(card) {
   const why = card.reason ?? "no release found";
   const sentence = `${why.charAt(0).toUpperCase()}${why.slice(1)}.`;
   const says =
-    card.available !== null
-      ? `${card.available} is published. Start cannot replace its own running binary, so update it by hand.`
-      : `${sentence} Start cannot replace its own running binary, so it updates itself.`;
-  node.append(el("p", "card-meta card-self-note", says));
+    card.state === "update-available" && card.available !== null
+      ? `${card.available} is published. Start cannot replace its own running binary, so this opens the page where you can.`
+      : card.available !== null
+        ? `${card.available} is the newest release, and Start cannot replace its own running binary.`
+        : `${sentence} Start cannot replace its own running binary, so it updates itself.`;
+  const note = el("p", "card-meta card-self-note", says);
+
+  // The one thing this row can offer. `target` sends it through the window's
+  // external-link handler, so the browser opens it and the page never leaves Start.
+  if (card.state === "update-available" && card.releases !== null) {
+    const link = el("a", "card-self-link", "Open the release page…");
+    link.href = card.releases;
+    link.target = "_blank";
+    link.rel = "noreferrer";
+    note.append(" ", link);
+  }
+  node.append(note);
   return node;
 }
 

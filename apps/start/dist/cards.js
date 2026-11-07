@@ -1,5 +1,5 @@
 import { workspaceLink } from "@suite/contracts";
-import { SELF_ID } from "./catalogue.js";
+import { isNewer, SELF_ID } from "./catalogue.js";
 import { UNREPORTED } from "./reportedUpdate.js";
 /** The folder name a refused install is known by. */
 function nameFor(path) {
@@ -34,6 +34,7 @@ export function appCards(input) {
         available: null,
         reason: install.reason,
         versions: 0,
+        releases: null,
         channel: "stable",
         update: UNREPORTED,
         executable: null,
@@ -56,6 +57,7 @@ export function appCards(input) {
             available: entry.available,
             reason: entry.reason,
             versions: input.versions.get(entry.id) ?? (found === null ? 0 : 1),
+            releases: entry.releases ?? null,
             channel: found?.manifest.update?.channel ?? entry.channel,
             update: input.updates.get(entry.id) ?? UNREPORTED,
             executable: found?.executable ?? null,
@@ -75,6 +77,7 @@ export function appCards(input) {
         available: null,
         reason: null,
         versions: input.versions.get(entry.manifest.id) ?? 1,
+        releases: null,
         channel: entry.manifest.update?.channel ?? "stable",
         update: input.updates.get(entry.manifest.id) ?? UNREPORTED,
         executable: entry.executable,
@@ -95,11 +98,16 @@ export function selfCard(entry, version) {
     return {
         id: SELF_ID,
         name: entry.name,
-        state: entry.available === null ? "no-release" : "current",
+        state: entry.available === null
+            ? "no-release"
+            : isNewer(entry.available, version)
+                ? "update-available"
+                : "current",
         version,
         available: entry.available,
         reason: entry.reason,
         versions: 1,
+        releases: entry.releases ?? null,
         channel: entry.channel,
         update: UNREPORTED,
         executable: null,

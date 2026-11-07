@@ -43,6 +43,14 @@ export interface InstallRequest {
     readonly fetch?: typeof globalThis.fetch;
     /** Called as bytes arrive. The card's progress bar is the only consumer. */
     readonly onProgress?: DownloadProgress;
+    /**
+     * Remove every other version of this app once the new one is in place.
+     *
+     * Set for an update, and never for a first install: a replace is the moment "which
+     * version am I running" should have one answer, where an install may be adding a
+     * version beside one somebody kept on purpose.
+     */
+    readonly prune?: boolean;
     readonly now?: () => Date;
 }
 export interface InstalledApp {
@@ -58,6 +66,14 @@ export declare function appDirectory(appsRoot: string, entry: CatalogueEntry, ve
 export declare function manifestText(entry: CatalogueEntry, version: string, feed: string): string;
 /** The versions of one app that are on disk, newest first. */
 export declare function installedVersions(appsRoot: string, entry: CatalogueEntry): Promise<readonly string[]>;
+/**
+ * Remove every version of an app except the one named.
+ *
+ * Best effort: a version directory that will not delete is not a failed install, so it is
+ * reported and the app stays installed. A running copy survives it — on Linux the file a
+ * live process holds stays until the process lets go.
+ */
+export declare function pruneOtherVersions(appsRoot: string, entry: CatalogueEntry, keep: string): Promise<void>;
 /** The base64 SHA-512 of a file, which is the form `electron-builder` writes. */
 export declare function fingerprintOfFile(path: string): Promise<string>;
 /**

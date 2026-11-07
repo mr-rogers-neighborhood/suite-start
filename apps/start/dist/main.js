@@ -329,9 +329,12 @@ async function state() {
  * Detached, no inherited stdio, and `unref`, so an app outlives the launcher in
  * the same way a browser tab outlives the window that opened it.
  */
-function spawnApp(app_, argv) {
-    const child = spawn(app_.executable, [...argv], { detached: true, stdio: "ignore" });
+function spawnExecutable(executable, argv) {
+    const child = spawn(executable, [...argv], { detached: true, stdio: "ignore" });
     child.unref();
+}
+function spawnApp(app_, argv) {
+    spawnExecutable(app_.executable, argv);
 }
 /** Resolve one target and start the app that owns it. */
 async function open(target) {
@@ -419,6 +422,8 @@ async function installOne(id) {
     }
     const artifact = entry.artifact;
     const version = entry.available;
+    // An update replaces a version this machine already has, and finishes by relaunching it.
+    const updating = entry.installed !== null && entry.installed !== version;
     let emitted = { at: 0, percent: -1 };
     reportProgress({ id, phase: "downloading", received: 0, total: artifact.size, reason: null });
     try {
@@ -430,6 +435,7 @@ async function installOne(id) {
             appsRoot: applicationsRoot(),
             registry,
             fetch: installFetch,
+            prune: updating,
             onProgress: (received, total) => {
                 const percent = total === null || total === 0 ? -1 : Math.floor((received / total) * 100);
                 const at = Date.now();
@@ -445,6 +451,10 @@ async function installOne(id) {
         // The feed answer is still the last check's; only what is on disk changed.
         catalogue = withInstalled(catalogue, id, installed.version);
         await broadcast();
+        // A replace should finish where it started: the app a person was using is running
+        // again, from the version they just agreed to.
+        if (updating)
+            spawnExecutable(installed.executable, []);
     }
     catch (error) {
         reportProgress({

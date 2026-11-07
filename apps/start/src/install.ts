@@ -64,6 +64,14 @@ export interface InstallRequest {
   readonly fetch?: typeof globalThis.fetch;
   /** Called as bytes arrive. The card's progress bar is the only consumer. */
   readonly onProgress?: DownloadProgress;
+  /**
+   * Remove every other version of this app once the new one is in place.
+   *
+   * Set for an update, and never for a first install: a replace is the moment "which
+   * version am I running" should have one answer, where an install may be adding a
+   * version beside one somebody kept on purpose.
+   */
+  readonly prune?: boolean;
   readonly now?: () => Date;
 }
 
@@ -131,6 +139,30 @@ async function exists(path: string): Promise<boolean> {
   } catch {
     return false;
   }
+}
+
+/**
+ * Remove every version of an app except the one named.
+ *
+ * Best effort: a version directory that will not delete is not a failed install, so it is
+ * reported and the app stays installed. A running copy survives it — on Linux the file a
+ * live process holds stays until the process lets go.
+ */
+export async function pruneOtherVersions(
+  appsRoot: string,
+  entry: CatalogueEntry,
+  keep: string,
+): Promise<void> {
+  const stale = (await installedVersions(appsRoot, entry)).filter((version) => version !== keep);
+  await Promise.all(
+    stale.map(async (version) => {
+      try {
+        await rm(appDirectory(appsRoot, entry, version), { recursive: true, force: true });
+      } catch (error) {
+        console.warn(`[install] could not remove ${entry.name} ${version}`, error);
+      }
+    }),
+  );
 }
 
 /** The base64 SHA-512 of a file, which is the form `electron-builder` writes. */
@@ -218,6 +250,7 @@ export async function installApp(request: InstallRequest): Promise<InstalledApp>
         manifestPath,
         installedAt: now().toISOString(),
       });
+      if (request.prune === true) await pruneOtherVersions(appsRoot, entry, version);
       installed = { id: entry.id, version, executable, manifestPath };
     } catch (error) {
       await rm(target, { recursive: true, force: true });

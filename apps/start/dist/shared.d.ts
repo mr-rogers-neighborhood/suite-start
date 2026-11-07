@@ -72,6 +72,8 @@ export interface AppCard {
     readonly available: string | null;
     /** Why no version is offered, when none is. */
     readonly reason: string | null;
+    /** Where a newer build can be fetched by hand, when this app cannot fetch it itself. */
+    readonly releases: string | null;
     /** How many versions of this app are on disk here. */
     readonly versions: number;
     readonly channel: SuiteReleaseChannel;

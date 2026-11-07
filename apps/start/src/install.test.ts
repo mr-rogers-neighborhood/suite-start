@@ -6,7 +6,7 @@ import { parseAppManifest } from "@suite/contracts";
 import type { FeedArtifact } from "@suite/desktop";
 import { afterEach, describe, expect, it } from "vitest";
 import { CATALOGUE_APPS, type CatalogueEntry } from "./catalogue.js";
-import { installApp, installedVersions, manifestText } from "./install.js";
+import { installApp, installedVersions, manifestText, pruneOtherVersions } from "./install.js";
 import { registryStore } from "./installs.js";
 
 const planner: CatalogueEntry = CATALOGUE_APPS[1];
@@ -171,6 +171,48 @@ describe("installApp", () => {
     expect(await readFile(installed.executable, "utf8")).toBe("version two, from the same release");
     const entries = await readdir(join(appsRoot, "Planner"));
     expect(entries).toEqual(["0.2.0"]);
+  });
+});
+
+describe("pruneOtherVersions", () => {
+  it("removes every version but the one that was just placed", async () => {
+    const { appsRoot } = await workspace();
+    const registry = registryStore(join(appsRoot, "..", "data"));
+    for (const version of ["0.1.0", "0.2.0"]) {
+      await installApp({
+        entry: planner,
+        version,
+        artifact: artifactFor(bytesOf(version)),
+        feed: "https://example.test/planner",
+        appsRoot,
+        registry,
+        download: async (_url, destination) => writeFile(destination, bytesOf(version)),
+      });
+    }
+
+    await pruneOtherVersions(appsRoot, planner, "0.2.0");
+    expect(await installedVersions(appsRoot, planner)).toEqual(["0.2.0"]);
+  });
+
+  it("is what an update asks for, and a first install does not", async () => {
+    const { appsRoot } = await workspace();
+    const registry = registryStore(join(appsRoot, "..", "data"));
+    for (const version of ["0.1.0", "0.2.0"]) {
+      await installApp({
+        entry: planner,
+        version,
+        artifact: artifactFor(bytesOf(version)),
+        feed: "https://example.test/planner",
+        appsRoot,
+        registry,
+        prune: true,
+        download: async (_url, destination) => writeFile(destination, bytesOf(version)),
+      });
+    }
+
+    // The second install pruned the first: one version, the one the record names.
+    expect(await installedVersions(appsRoot, planner)).toEqual(["0.2.0"]);
+    expect((await registry.list())[0]?.executable).toContain("0.2.0");
   });
 });
 

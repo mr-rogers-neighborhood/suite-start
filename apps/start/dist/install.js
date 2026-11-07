@@ -54,6 +54,24 @@ async function exists(path) {
         return false;
     }
 }
+/**
+ * Remove every version of an app except the one named.
+ *
+ * Best effort: a version directory that will not delete is not a failed install, so it is
+ * reported and the app stays installed. A running copy survives it — on Linux the file a
+ * live process holds stays until the process lets go.
+ */
+export async function pruneOtherVersions(appsRoot, entry, keep) {
+    const stale = (await installedVersions(appsRoot, entry)).filter((version) => version !== keep);
+    await Promise.all(stale.map(async (version) => {
+        try {
+            await rm(appDirectory(appsRoot, entry, version), { recursive: true, force: true });
+        }
+        catch (error) {
+            console.warn(`[install] could not remove ${entry.name} ${version}`, error);
+        }
+    }));
+}
 /** The base64 SHA-512 of a file, which is the form `electron-builder` writes. */
 export async function fingerprintOfFile(path) {
     const hash = createHash("sha512");
@@ -133,6 +151,8 @@ export async function installApp(request) {
                 manifestPath,
                 installedAt: now().toISOString(),
             });
+            if (request.prune === true)
+                await pruneOtherVersions(appsRoot, entry, version);
             installed = { id: entry.id, version, executable, manifestPath };
         }
         catch (error) {

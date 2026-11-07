@@ -258,6 +258,12 @@ h3 {
   border-style: dashed;
 }
 
+.card-self-link {
+  color: var(--accent);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
 .button {
   font: inherit;
   font-size: 13px;
