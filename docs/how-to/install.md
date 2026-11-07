@@ -9,8 +9,8 @@ The release also carries an Arch package, which installs the hub under `/opt` wi
 **no FUSE requirement at all**:
 
 ```sh
-curl -LO https://github.com/mr-rogers-neighborhood/suite-start/releases/latest/download/suite-start-bin-0.3.1-1-x86_64.pkg.tar.zst
-sudo pacman -U suite-start-bin-0.3.1-1-x86_64.pkg.tar.zst
+curl -LO https://github.com/mr-rogers-neighborhood/suite-start/releases/latest/download/suite-start-bin-0.3.2-1-x86_64.pkg.tar.zst
+sudo pacman -U suite-start-bin-0.3.2-1-x86_64.pkg.tar.zst
 ```
 
 The version in those names is whatever the newest release is called; the release page lists the exact
@@ -39,7 +39,7 @@ signing identity yet, so there is nothing to download for them.
 The yml names the file and its SHA-512. Compare it before you run anything:
 
 ```sh
-sha512sum suite-start-0.3.1-x86_64.AppImage
+sha512sum suite-start-0.3.2-x86_64.AppImage
 ```
 
 The value must match the `sha512:` beside the file name in `latest-linux.yml`. This is the same check
@@ -48,7 +48,7 @@ Start makes on every app it installs.
 ## 3. Make it runnable
 
 ```sh
-chmod +x suite-start-0.3.1-x86_64.AppImage
+chmod +x suite-start-0.3.2-x86_64.AppImage
 ```
 
 An AppImage needs FUSE 2 to mount itself. Many distributions no longer install it by default, and
@@ -61,13 +61,13 @@ sudo apt install libfuse2     # Debian, Ubuntu
 sudo dnf install fuse         # Fedora
 
 # or run it without FUSE, which extracts and starts in one step
-./suite-start-0.3.1-x86_64.AppImage --appimage-extract-and-run
+./suite-start-0.3.2-x86_64.AppImage --appimage-extract-and-run
 ```
 
 ## 4. Open it
 
 ```sh
-./suite-start-0.3.1-x86_64.AppImage
+./suite-start-0.3.2-x86_64.AppImage
 ```
 
 You get one window with a card per app the suite offers:

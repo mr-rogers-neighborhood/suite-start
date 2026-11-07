@@ -44,6 +44,11 @@ What `package()` does, and why each part:
 
 - `--appimage-extract` into `/opt/suite-start` — no mounting, so **no `fuse2` dependency**. The hub
   starts on a machine that has never heard of FUSE.
+- Every directory it installs is normalised to **0755**. This is not cosmetic: the image's own
+  directories are 0700, `cp -a` reproduces that faithfully, and a root-owned directory a user cannot
+  traverse makes every file inside it report as missing. That shipped once — 0.3.1 installed and then
+  said "Could not find the program '/opt/suite-start/suite-start'" — and `release.mjs` now reads the
+  built archive back and refuses one whose `opt/` directories are not world-executable.
 - A `.desktop` of its own, with `Exec=/opt/suite-start/suite-start %U` and
   `MimeType=x-scheme-handler/suite;`, so links open the hub and the window is associated with its own
   entry.

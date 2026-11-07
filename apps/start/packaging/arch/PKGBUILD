@@ -51,7 +51,7 @@ options=(!strip)
 # Tag-pinned, not `latest/download`: a package that silently changes contents when a
 # newer release appears is not reproducible, and `sha256sums` would be wrong for it.
 source=("$pkgname-$pkgver.AppImage::https://github.com/mr-rogers-neighborhood/suite-start/releases/download/start-v$pkgver/suite-start-$pkgver-x86_64.AppImage")
-sha256sums=('f7b0581539de0aacc3f26190c68bbe1b827774afc34ebb9400bac1f429c3260c')
+sha256sums=('82b40ca15c361d08847bfba4853f42e2848b1119eb5a1df5865d1f06d28cf8c9')
 
 package() {
   cd "$srcdir"
