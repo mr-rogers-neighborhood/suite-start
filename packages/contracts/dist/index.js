@@ -1,4 +1,5 @@
 export { appEntryLink, manifestFitsHub, parseAppManifest, SUITE_APP_MANIFEST_FORMAT, SUITE_PROTOCOL_PREFIX, suiteAppIdSchema, suiteAppManifestSchema, suiteAppUpdateSchema, suiteCapabilitySchema, suiteReleaseChannelSchema, suiteSemverSchema, } from "./appManifest.js";
+export { isArtifactCompatible, parseSuiteArtifact, SUITE_ARTIFACT_CONTRACT_VERSION, SUITE_ARTIFACT_FORMAT, suiteArtifactFileSchema, suiteArtifactKindSchema, suiteArtifactSchema, suiteArtifactSignatureSchema, } from "./artifact.js";
 export { CONTRACT_VERSION, compareSemver, isContractCompatible, parseSemver, } from "./contractVersion.js";
 export { DEFAULT_APP_IDS, deepLinkPrefix, formatDeepLink, parseDeepLink, SUITE_PROTOCOL, WORKSPACE_SEGMENT, workspaceLink, workspaceTarget, } from "./deepLink.js";
 export { deploymentAllows, parseDeployment, relayFor, SUITE_DEPLOYMENT_FORMAT, SUITE_DEPLOYMENT_FORMAT_VERSION, sellsPlans, suiteDeploymentAuthSchema, suiteDeploymentFeaturesSchema, suiteDeploymentSchema, } from "./deployment.js";

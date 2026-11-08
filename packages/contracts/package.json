@@ -1,6 +1,6 @@
 {
   "name": "@suite/contracts",
-  "version": "0.7.0",
+  "version": "0.17.0",
   "description": "The suite's shared vocabulary: app manifests, deployment capability documents, deep links and contract versions. Pure Zod and pure functions; no Electron, no React, no Loro, no I/O.",
   "type": "module",
   "main": "./dist/index.js",
