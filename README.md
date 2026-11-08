@@ -11,21 +11,21 @@ Suite Start is the one app you fetch by hand; every other app in the suite arriv
 **On Arch**, take the package — it needs no FUSE and gives you a menu entry:
 
 ```sh
-curl -LO https://github.com/mr-rogers-neighborhood/suite-start/releases/latest/download/suite-start-bin-0.3.2-1-x86_64.pkg.tar.zst
-sudo pacman -U suite-start-bin-0.3.2-1-x86_64.pkg.tar.zst
+curl -LO https://github.com/mr-rogers-neighborhood/suite-start/releases/latest/download/suite-start-bin-0.3.9-1-x86_64.pkg.tar.zst
+sudo pacman -U suite-start-bin-0.3.9-1-x86_64.pkg.tar.zst
 ```
 
 Everywhere else, take `suite-start-<version>-x86_64.AppImage` from the
 [latest release](https://github.com/mr-rogers-neighborhood/suite-start/releases/latest), then:
 
 ```sh
-chmod +x suite-start-0.3.2-x86_64.AppImage
-./suite-start-0.3.2-x86_64.AppImage
+chmod +x suite-start-0.3.9-x86_64.AppImage
+./suite-start-0.3.9-x86_64.AppImage
 ```
 
 An AppImage needs FUSE 2, which many distributions no longer install by default: `fuse2` on Arch,
 `libfuse2` on Debian or Ubuntu, `fuse` on Fedora. Without it you get `dlopen(): error loading
-libfuse.so.2`; `--appimage-extract-and-run` starts it anyway.
+libfuse.so.9`; `--appimage-extract-and-run` starts it anyway.
 
 [Installing Suite Start](docs/how-to/install.md) has the checksum step, the error messages worth
 recognising, and what each card state means. [Packaging](docs/how-to/package.md) explains the four
