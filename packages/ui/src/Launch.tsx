@@ -51,8 +51,41 @@ export interface LaunchProps {
   readonly footer?: ReactNode;
   /** A notice that sits above everything, such as an alpha warning. */
   readonly notice?: ReactNode;
+  /**
+   * The chrome around the content.
+   *
+   * `page` is a column on the canvas; `card` a centred panel with a shadow, which is what a
+   * canvas-style launcher wants; `bar` a full-height layout whose heading is a compact horizontal
+   * strip, which is what a document-list-first app wants.
+   *
+   * Three, because the three apps genuinely had three. Imposing one would have been a redesign
+   * dressed as a refactor — what is worth sharing is the *content* and its order, not the frame.
+   */
+  readonly frame?: "page" | "card" | "bar";
   readonly className?: string;
 }
+
+const FRAMES = {
+  page: {
+    outer: "mx-auto flex min-h-screen w-full max-w-3xl flex-col gap-8 px-8 py-10",
+    header: "flex items-start gap-4",
+    title: "text-[34px] font-semibold tracking-tight",
+    body: "",
+  },
+  card: {
+    outer:
+      "mx-auto w-[min(760px,100%)] overflow-hidden rounded-2xl border border-[var(--hairline)] bg-[var(--surface)] shadow-[0_30px_80px_-40px_rgba(0,0,0,0.55)]",
+    header: "flex items-end justify-between gap-6 border-b border-[var(--hairline)] px-8 pt-8 pb-7",
+    title: "text-[34px] font-semibold tracking-tight",
+    body: "px-8 py-6",
+  },
+  bar: {
+    outer: "flex h-screen flex-col bg-[var(--canvas)]",
+    header: "flex items-center gap-3 border-b border-[var(--hairline)] px-8 py-5",
+    title: "text-[15px] font-semibold tracking-tight",
+    body: "flex-1 overflow-y-auto px-8 py-8",
+  },
+} as const;
 
 export function Launch({
   mark,
@@ -66,67 +99,81 @@ export function Launch({
   children,
   footer,
   notice,
+  frame = "page",
   className,
 }: LaunchProps) {
   const headingId = useId();
+  const chrome = FRAMES[frame];
+  const compact = frame === "bar";
 
   return (
-    <div
-      className={cx(
-        "mx-auto flex min-h-screen w-full max-w-3xl flex-col gap-8 px-8 py-10",
-        className,
-      )}
-    >
+    <div className={cx(chrome.outer, className)}>
       {notice}
-      <header className="flex items-start gap-4">
-        {mark === undefined ? null : <div className="mt-1 shrink-0">{mark}</div>}
-        <div>
-          <h1 id={headingId} className="text-[34px] font-semibold tracking-tight">
+      <header className={chrome.header}>
+        {mark === undefined ? null : <div className="shrink-0">{mark}</div>}
+        <div className="min-w-0">
+          <h1 id={headingId} className={chrome.title}>
             {title}
           </h1>
-          <div className={cx("mt-1 max-w-[420px] text-[13px] leading-5", INK.muted)}>
-            <p>{tagline}</p>
-            {hint === undefined ? null : (
-              <>
-                <hr className="my-2 border-[var(--hairline)]" />
-                <p>{hint}</p>
-              </>
-            )}
-          </div>
+          {/* In a compact bar the tagline is the second line of the header, so the rule and
+              the hint would turn a 40px strip into a paragraph. */}
+          {compact ? (
+            <p className={cx("mt-0.5 text-[11px]", INK.muted)}>{hint ?? tagline}</p>
+          ) : (
+            <div className={cx("mt-1 max-w-[420px] text-[13px] leading-5", INK.muted)}>
+              <p>{tagline}</p>
+              {hint === undefined ? null : (
+                <>
+                  <hr className="my-2 border-[var(--hairline)]" />
+                  <p>{hint}</p>
+                </>
+              )}
+            </div>
+          )}
         </div>
+        {compact && actions !== undefined ? (
+          <div className="ml-auto flex flex-wrap items-center gap-2">{actions}</div>
+        ) : null}
       </header>
 
-      {actions === undefined ? null : (
-        <div className="flex flex-wrap items-center gap-2">{actions}</div>
-      )}
+      <div className={cx(chrome.body, "flex flex-col gap-6")}>
+        {compact || actions === undefined ? null : (
+          <div className="flex flex-wrap items-center gap-2">{actions}</div>
+        )}
 
-      {children}
+        {children}
 
-      <section aria-labelledby={headingId} className="flex flex-col gap-2">
-        {recents.length === 0
-          ? recentEmpty
-          : recents.map((recent) => (
-              <div
-                key={recent.id}
-                className="flex items-center gap-2 rounded-xl border border-[var(--hairline)] px-3 py-2.5"
-              >
-                <button
-                  type="button"
-                  onClick={() => onOpenRecent?.(recent.id)}
-                  className="flex min-w-0 flex-1 flex-col items-start text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--focus)]"
+        <section aria-labelledby={headingId} className="flex flex-col gap-2">
+          {recents.length === 0
+            ? recentEmpty
+            : recents.map((recent) => (
+                <div
+                  key={recent.id}
+                  className="flex items-center gap-2 rounded-xl border border-[var(--hairline)] px-3 py-2.5"
                 >
-                  <span className="truncate text-[13px] font-medium">{recent.name}</span>
-                  {recent.detail === undefined ? null : (
-                    <span className={cx("text-[11px]", INK.muted)}>{recent.detail}</span>
-                  )}
-                </button>
-                {recent.action}
-              </div>
-            ))}
-      </section>
+                  <button
+                    type="button"
+                    onClick={() => onOpenRecent?.(recent.id)}
+                    className="flex min-w-0 flex-1 flex-col items-start text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--focus)]"
+                  >
+                    <span className="truncate text-[13px] font-medium">{recent.name}</span>
+                    {recent.detail === undefined ? null : (
+                      <span className={cx("text-[11px]", INK.muted)}>{recent.detail}</span>
+                    )}
+                  </button>
+                  {recent.action}
+                </div>
+              ))}
+        </section>
+      </div>
 
       {footer === undefined ? null : (
-        <footer className={cx("mt-auto flex flex-wrap items-center gap-3 text-[11px]", INK.faint)}>
+        <footer
+          className={cx(
+            "mt-auto flex flex-wrap items-center gap-3 px-8 pb-6 text-[11px]",
+            INK.faint,
+          )}
+        >
           {footer}
         </footer>
       )}

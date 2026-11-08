@@ -71,6 +71,26 @@ describe("Launch", () => {
     expect(screen.getByText("Suite is alpha software.")).toBeInTheDocument();
   });
 
+  it("offers the three frames the apps actually had", () => {
+    // One component, three presentations: a page column, a centred card, and a full-height
+    // layout with a compact header bar. Sharing the content is the point; imposing one frame
+    // would have been a redesign.
+    const { container: page } = render(<Launch {...base} frame="page" />);
+    expect(page.firstElementChild?.className).toContain("max-w-3xl");
+
+    const { container: card } = render(<Launch {...base} frame="card" />);
+    expect(card.firstElementChild?.className).toContain("rounded-2xl");
+
+    const { container: bar } = render(<Launch {...base} frame="bar" />);
+    expect(bar.firstElementChild?.className).toContain("h-screen");
+  });
+
+  it("puts the actions in the header when the frame is a bar", () => {
+    render(<Launch {...base} frame="bar" actions={<button type="button">New budget</button>} />);
+    const header = screen.getByRole("heading", { level: 1 }).closest("header");
+    expect(header).toContainElement(screen.getByRole("button", { name: "New budget" }));
+  });
+
   it("takes app-specific content as children", () => {
     render(
       <Launch {...base}>

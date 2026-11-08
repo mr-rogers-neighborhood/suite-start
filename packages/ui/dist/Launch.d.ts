@@ -47,7 +47,18 @@ export interface LaunchProps {
     readonly footer?: ReactNode;
     /** A notice that sits above everything, such as an alpha warning. */
     readonly notice?: ReactNode;
+    /**
+     * The chrome around the content.
+     *
+     * `page` is a column on the canvas; `card` a centred panel with a shadow, which is what a
+     * canvas-style launcher wants; `bar` a full-height layout whose heading is a compact horizontal
+     * strip, which is what a document-list-first app wants.
+     *
+     * Three, because the three apps genuinely had three. Imposing one would have been a redesign
+     * dressed as a refactor — what is worth sharing is the *content* and its order, not the frame.
+     */
+    readonly frame?: "page" | "card" | "bar";
     readonly className?: string;
 }
-export declare function Launch({ mark, title, tagline, hint, actions, recentEmpty, recents, onOpenRecent, children, footer, notice, className, }: LaunchProps): import("react").JSX.Element;
+export declare function Launch({ mark, title, tagline, hint, actions, recentEmpty, recents, onOpenRecent, children, footer, notice, frame, className, }: LaunchProps): import("react").JSX.Element;
 //# sourceMappingURL=Launch.d.ts.map
