@@ -2,8 +2,8 @@ import { jsx as _jsx } from "react/jsx-runtime";
 import { cx } from "./cx.js";
 import { EDGE, FOCUS_RING, INK, PRESSABLE, SURFACE } from "./tokens.js";
 const SIZES = {
-    sm: "h-7 w-7 rounded-md",
-    md: "h-9 w-9 rounded-lg",
+    sm: "h-[var(--control-height-sm,2rem)] w-[var(--control-height-sm,2rem)] rounded-md",
+    md: "h-[var(--control-height,2.25rem)] w-[var(--control-height,2.25rem)] rounded-lg",
 };
 export function IconButton({ label, size = "sm", variant = "quiet", className, type = "button", children, ...props }) {
     return (_jsx("button", { type: type, "aria-label": label, title: props.title ?? label, className: cx(PRESSABLE, "shrink-0 border", FOCUS_RING, SIZES[size], variant === "plain"

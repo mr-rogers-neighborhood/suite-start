@@ -36,8 +36,10 @@ const VARIANTS: Record<ButtonVariant, string> = {
 };
 
 const SIZES: Record<ButtonSize, string> = {
-  sm: "h-8 gap-1.5 rounded-md px-2.5 text-[12px]",
-  md: "h-9 gap-2 rounded-lg px-3 text-[13px]",
+  // Space comes from the density variables, with the shipped value as the fallback, so a host
+  // that never publishes them renders exactly as before while a touch host gets 44px.
+  sm: "h-[var(--control-height-sm,2rem)] gap-[var(--control-gap-sm,0.375rem)] rounded-md px-[var(--control-padding-x-sm,0.625rem)] text-[length:var(--text-label,12px)]",
+  md: "h-[var(--control-height,2.25rem)] gap-[var(--control-gap,0.5rem)] rounded-lg px-[var(--control-padding-x,0.75rem)] text-[length:var(--text-body,13px)]",
 };
 
 export function Button({

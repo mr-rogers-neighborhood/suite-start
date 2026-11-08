@@ -57,6 +57,21 @@ export {
   type ThemeValues,
 } from "./roles.js";
 export {
+  applyScale,
+  DEFAULT_DENSITY,
+  DENSITIES,
+  DENSITY_SCALE,
+  type Density,
+  type DensityMetrics,
+  densityVariables,
+  TYPE_ROLES,
+  TYPE_SCALE,
+  type TypeRole,
+  type TypeStep,
+  typeVariableFor,
+  typeVariables,
+} from "./scale.js";
+export {
   isSuiteTheme,
   isThemeMode,
   ROLE_ORDER,

@@ -33,7 +33,10 @@ export function Field({ label, hint, error, trailing, id, className, ...props }:
 
   return (
     <div className={cx("flex flex-col gap-1.5", className)}>
-      <label htmlFor={fieldId} className={cx("text-[12px] font-medium", INK.base)}>
+      <label
+        htmlFor={fieldId}
+        className={cx("text-[length:var(--text-label,12px)] font-medium", INK.base)}
+      >
         {label}
       </label>
       <div className="flex items-center gap-2">
@@ -42,7 +45,7 @@ export function Field({ label, hint, error, trailing, id, className, ...props }:
           aria-invalid={error !== undefined}
           aria-describedby={describedBy.length === 0 ? undefined : describedBy}
           className={cx(
-            "h-9 w-full rounded-lg border px-3 text-[13px] transition-colors",
+            "h-[var(--control-height,2.25rem)] w-full rounded-lg border px-[var(--control-padding-x,0.75rem)] text-[length:var(--text-body,13px)] transition-colors",
             SURFACE.base,
             INK.base,
             FOCUS_RING,
@@ -57,12 +60,12 @@ export function Field({ label, hint, error, trailing, id, className, ...props }:
         {trailing}
       </div>
       {hint === undefined ? null : (
-        <p id={hintId} className={cx("text-[11px]", INK.muted)}>
+        <p id={hintId} className={cx("text-[length:var(--text-caption,11px)]", INK.muted)}>
           {hint}
         </p>
       )}
       {error === undefined ? null : (
-        <p id={errorId} className={cx("text-[11px]", INK.danger)}>
+        <p id={errorId} className={cx("text-[length:var(--text-caption,11px)]", INK.danger)}>
           {error}
         </p>
       )}

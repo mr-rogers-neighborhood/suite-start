@@ -83,7 +83,7 @@ const FRAME = {
   outer:
     "mx-auto w-[min(760px,100%)] overflow-hidden rounded-2xl border border-[var(--hairline)] bg-[var(--surface)] shadow-[0_30px_80px_-40px_rgba(0,0,0,0.55)]",
   header: "flex items-end justify-between gap-6 border-b border-[var(--hairline)] px-8 pt-8 pb-7",
-  title: "text-[34px] font-semibold tracking-tight",
+  title: "text-[length:var(--text-display,34px)] font-semibold tracking-tight",
   body: "px-8 py-6",
 } as const;
 
@@ -114,7 +114,12 @@ export function Launch({
           <h1 id={headingId} className={chrome.title}>
             {title}
           </h1>
-          <div className={cx("mt-1 max-w-[420px] text-[13px] leading-5", INK.muted)}>
+          <div
+            className={cx(
+              "mt-1 max-w-[420px] text-[length:var(--text-body,13px)] leading-[var(--leading-body,20px)]",
+              INK.muted,
+            )}
+          >
             <p>{tagline}</p>
             {hint === undefined ? null : (
               <>
@@ -142,16 +147,20 @@ export function Launch({
             : recents.map((recent) => (
                 <div
                   key={recent.id}
-                  className="flex items-center gap-2 rounded-xl border border-[var(--hairline)] px-3 py-2.5"
+                  className="flex items-center gap-2 rounded-xl border border-[var(--hairline)] px-[var(--control-padding-x-sm,0.625rem)] py-[var(--row-padding-y,0.625rem)]"
                 >
                   <button
                     type="button"
                     onClick={() => onOpenRecent?.(recent.id)}
                     className="flex min-w-0 flex-1 flex-col items-start text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--focus)]"
                   >
-                    <span className="truncate text-[13px] font-medium">{recent.name}</span>
+                    <span className="truncate text-[length:var(--text-body,13px)] font-medium">
+                      {recent.name}
+                    </span>
                     {recent.detail === undefined ? null : (
-                      <span className={cx("text-[11px]", INK.muted)}>{recent.detail}</span>
+                      <span className={cx("text-[length:var(--text-caption,11px)]", INK.muted)}>
+                        {recent.detail}
+                      </span>
                     )}
                   </button>
                   {recent.action}
@@ -163,7 +172,7 @@ export function Launch({
       {footer === undefined ? null : (
         <footer
           className={cx(
-            "mt-auto flex flex-wrap items-center gap-3 px-8 pb-6 text-[11px]",
+            "mt-auto flex flex-wrap items-center gap-3 px-8 pb-6 text-[length:var(--text-caption,11px)]",
             INK.faint,
           )}
         >

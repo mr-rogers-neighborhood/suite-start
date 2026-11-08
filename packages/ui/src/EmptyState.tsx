@@ -27,9 +27,16 @@ export function EmptyState({ title, children, action, className }: EmptyStatePro
         className,
       )}
     >
-      <p className={cx("text-[13px] font-medium", INK.base)}>{title}</p>
+      <p className={cx("text-[length:var(--text-body,13px)] font-medium", INK.base)}>{title}</p>
       {children === undefined ? null : (
-        <p className={cx("mx-auto mt-1 max-w-[46ch] text-[12px]", INK.muted)}>{children}</p>
+        <p
+          className={cx(
+            "mx-auto mt-1 max-w-[46ch] text-[length:var(--text-label,12px)]",
+            INK.muted,
+          )}
+        >
+          {children}
+        </p>
       )}
       {action === undefined ? null : <div className="mt-4 flex justify-center gap-2">{action}</div>}
     </div>

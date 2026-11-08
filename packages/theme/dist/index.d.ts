@@ -20,5 +20,6 @@ export { applyTheme, colorSchemeFor, cssVariableFor, cssVariables, type Paintabl
 export { CONTRAST_LARGE, CONTRAST_TEXT, CONTRAST_UI, contrastRatio, INK_CANDIDATES, type InkChoice, isMeasurable, luminance, pickInk, } from "./contrast.js";
 export { DEFAULT_THEME_ID, defaultTheme, PRESETS, presetById, } from "./presets/index.js";
 export { CHART_ROLES, type ChartRole, HUE_ROLES, type HueRole, isThemeRole, MARK_ROLES, type MarkRole, PAINT_INK, PAINT_ROLES, type PaintRole, REQUIRED_ROLES, THEME_ROLES, type ThemeRole, type ThemeValues, } from "./roles.js";
+export { applyScale, DEFAULT_DENSITY, DENSITIES, DENSITY_SCALE, type Density, type DensityMetrics, densityVariables, TYPE_ROLES, TYPE_SCALE, type TypeRole, type TypeStep, typeVariableFor, typeVariables, } from "./scale.js";
 export { isSuiteTheme, isThemeMode, ROLE_ORDER, SUITE_THEME_FORMAT, type SuiteTheme, THEME_CONTRACT_VERSION, THEME_MODES, type ThemeMode, valuesFor, } from "./theme.js";
 //# sourceMappingURL=index.d.ts.map

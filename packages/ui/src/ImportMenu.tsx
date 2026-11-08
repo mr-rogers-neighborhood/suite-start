@@ -124,15 +124,19 @@ export function ImportMenu({
                 option.onSelect();
               }}
               className={cx(
-                "flex flex-col items-start rounded-md px-2.5 py-1.5 text-left",
+                "flex flex-col items-start rounded-md px-[var(--control-padding-x-sm,0.625rem)] py-[var(--row-padding-y,0.625rem)] text-left",
                 PRESSABLE,
                 "hover:bg-[var(--surface-sunk)] focus-visible:bg-[var(--surface-sunk)]",
                 INK.base,
               )}
             >
-              <span className="text-[13px] font-medium">{option.label}</span>
+              <span className="text-[length:var(--text-body,13px)] font-medium">
+                {option.label}
+              </span>
               {option.detail === undefined ? null : (
-                <span className={cx("text-[11px]", INK.muted)}>{option.detail}</span>
+                <span className={cx("text-[length:var(--text-caption,11px)]", INK.muted)}>
+                  {option.detail}
+                </span>
               )}
             </button>
           ))}

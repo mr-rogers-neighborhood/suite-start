@@ -33,9 +33,16 @@ export function Dialog({
 }: DialogProps) {
   return (
     <Modal open={open} onClose={onClose} label={title} size={size}>
-      <h2 className="text-[15px] font-semibold tracking-tight">{title}</h2>
+      <h2 className="text-[length:var(--text-title,15px)] font-semibold tracking-tight">{title}</h2>
       {description === undefined ? null : (
-        <p className={cx("mt-1 text-[12px] leading-5", INK.muted)}>{description}</p>
+        <p
+          className={cx(
+            "mt-1 text-[length:var(--text-label,12px)] leading-[var(--leading-body,20px)]",
+            INK.muted,
+          )}
+        >
+          {description}
+        </p>
       )}
       {children === undefined ? null : <div className="mt-4">{children}</div>}
       {actions === undefined ? null : (

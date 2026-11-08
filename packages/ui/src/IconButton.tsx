@@ -22,8 +22,8 @@ export interface IconButtonProps
 }
 
 const SIZES: Record<IconButtonSize, string> = {
-  sm: "h-7 w-7 rounded-md",
-  md: "h-9 w-9 rounded-lg",
+  sm: "h-[var(--control-height-sm,2rem)] w-[var(--control-height-sm,2rem)] rounded-md",
+  md: "h-[var(--control-height,2.25rem)] w-[var(--control-height,2.25rem)] rounded-lg",
 };
 
 export function IconButton({
