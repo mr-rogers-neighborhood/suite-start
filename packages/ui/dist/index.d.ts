@@ -28,6 +28,7 @@ export { Field, type FieldProps } from "./Field.js";
 export { IconButton, type IconButtonProps, type IconButtonSize } from "./IconButton.js";
 export { Launch, type LaunchProps, type LaunchRecent, } from "./Launch.js";
 export { Modal, type ModalProps } from "./Modal.js";
+export { PRIVACY_SENTENCE, PrivacyLine, type PrivacyLineProps } from "./PrivacyLine.js";
 export { Toast, type ToastNotice, type ToastProps } from "./Toast.js";
 export { EDGE, FOCUS_RING, INK, INK_ON, PRESSABLE, SURFACE } from "./tokens.js";
 //# sourceMappingURL=index.d.ts.map

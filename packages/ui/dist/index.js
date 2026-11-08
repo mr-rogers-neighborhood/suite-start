@@ -28,6 +28,7 @@ export { Field } from "./Field.js";
 export { IconButton } from "./IconButton.js";
 export { Launch, } from "./Launch.js";
 export { Modal } from "./Modal.js";
+export { PRIVACY_SENTENCE, PrivacyLine } from "./PrivacyLine.js";
 export { Toast } from "./Toast.js";
 export { EDGE, FOCUS_RING, INK, INK_ON, PRESSABLE, SURFACE } from "./tokens.js";
 //# sourceMappingURL=index.js.map
