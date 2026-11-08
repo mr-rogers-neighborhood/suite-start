@@ -22,8 +22,14 @@ export interface LaunchRecent {
     readonly action?: ReactNode;
 }
 export interface LaunchProps {
-    /** The app's own mark, as a URL. Omitted, the heading simply starts further left. */
-    readonly mark?: string;
+    /**
+     * The app's own mark.
+     *
+     * A node rather than a URL: an `<img>` is a separate document and cannot inherit
+     * `currentColor`, so a themed mark could never be an image. Each app passes its own
+     * `AppMark` — which is how the launcher stops showing the suite logo on an app's screen.
+     */
+    readonly mark?: ReactNode;
     /** The app's name. */
     readonly title: string;
     /** One line, in the app's own words, above the rule. */

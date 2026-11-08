@@ -3,7 +3,8 @@ import { describe, expect, it, vi } from "vitest";
 import { Launch } from "./Launch.js";
 
 const base = {
-  mark: "data:image/png;base64,AAAA",
+  // A themed mark, not a URL: an `<img>` is a separate document and cannot inherit colour.
+  mark: <span data-testid="mark" aria-hidden="true" />,
   title: "Suite Canvas",
   tagline: "A canvas for connected thinking.",
   hint: "Open a canvas file, pick up a recent one, or choose a starter template.",
@@ -17,9 +18,11 @@ describe("Launch", () => {
     expect(screen.getByText(/choose a starter template/u)).toBeInTheDocument();
   });
 
-  it("treats the mark as decoration, since the title already names the app", () => {
-    const { container } = render(<Launch {...base} />);
-    expect(container.querySelector("img")).toHaveAttribute("alt", "");
+  it("renders whatever mark it is given", () => {
+    // The caller owns the mark's accessibility: an `AppMark` with no label is already
+    // decoration, and one with a label names itself.
+    render(<Launch {...base} />);
+    expect(screen.getByTestId("mark")).toBeInTheDocument();
   });
 
   it("offers the actions it is given", () => {
