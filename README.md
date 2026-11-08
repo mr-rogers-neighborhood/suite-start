@@ -40,6 +40,8 @@ replace a file it is allowed to write. Everything below describes the code rathe
 - **Later:** the invite/join flow, person keys, and the shared sync protocol's remaining surface. The
   hosted web app, control plane and relay are retired, not moved.
 
+What changed, in a person's words rather than commits: [CHANGELOG.md](CHANGELOG.md).
+
 ## Two rules
 
 1. **Start is not in the data path.** It returns a path or a URL. It never proxies document bytes.
