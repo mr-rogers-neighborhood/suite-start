@@ -10,6 +10,14 @@ the apps pin, and are not releases of the launcher.
 
 No changes yet.
 
+## [0.3.10] - 2026-11-07
+
+### Changed
+
+- **Settings says what a person can act on.** The Updates and Network rows described how the rule
+  is implemented rather than what happens on this machine. A sync notice now says what the state
+  means instead of repeating its own heading.
+
 ## [0.3.9] - 2026-11-07
 
 ### Fixed
