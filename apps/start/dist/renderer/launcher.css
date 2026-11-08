@@ -196,10 +196,6 @@ h3 {
   gap: 10px;
 }
 
-.card-title:has(.card-mark) .card-channel {
-  margin-left: auto;
-}
-
 /* A release channel, when it is not the stable one. */
 .card-channel {
   margin-left: auto;
@@ -211,6 +207,10 @@ h3 {
   border: 1px solid var(--hairline);
   border-radius: 999px;
   padding: 1px 8px;
+}
+
+.card-title:has(.card-mark) .card-channel {
+  margin-left: auto;
 }
 
 .card-version,
