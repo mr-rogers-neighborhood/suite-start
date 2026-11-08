@@ -55,6 +55,23 @@ body {
   border-right: 1px solid var(--hairline);
 }
 
+/* The mark and the word as one block, so the version sits under the name rather than under
+   the pair. */
+.rail-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* Sized to the heading it sits beside. `currentColor` is the theme's ink, inherited. */
+.rail-mark {
+  display: flex;
+  flex: none;
+  width: 26px;
+  height: 26px;
+  color: var(--ink);
+}
+
 .rail-brand h1 {
   margin: 0 0 2px;
   font-size: 17px;

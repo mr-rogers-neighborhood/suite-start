@@ -10,6 +10,7 @@ import { renderApps } from "./apps.js";
 import { renderFiles } from "./files.js";
 import { installRail } from "./rail.js";
 import { renderSettings } from "./settings.js";
+import { SUITE_MARK_PATH, SUITE_MARK_VIEW_BOX } from "./suiteMark.js";
 import { renderSync } from "./sync.js";
 
 const bridge = globalThis.suiteStart;
@@ -213,5 +214,26 @@ if (typeof bridge !== "object" || bridge === null) {
   // rather than trusting what it already drew.
   globalThis.addEventListener("focus", () => void refresh());
 
+  renderSuiteMark();
   void refresh();
+}
+
+/**
+ * Put the suite's own mark in the rail.
+ *
+ * Drawn as `currentColor`, so it is whatever ink the theme says — the alternative was the black
+ * and white file pair the apps used to swap, which only knew about two of six modes.
+ */
+function renderSuiteMark() {
+  const slot = document.getElementById("rail-mark");
+  if (!slot) return;
+  const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  svg.setAttribute("viewBox", SUITE_MARK_VIEW_BOX);
+  svg.setAttribute("fill", "currentColor");
+  svg.setAttribute("aria-hidden", "true");
+  svg.setAttribute("focusable", "false");
+  const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+  path.setAttribute("d", SUITE_MARK_PATH);
+  svg.append(path);
+  slot.replaceChildren(svg);
 }
