@@ -1,4 +1,4 @@
-import { type ReactNode, useId } from "react";
+import { type HTMLAttributes, type ReactNode, useId } from "react";
 import { cx } from "./cx.js";
 import { ImportMenu, type ImportOption } from "./ImportMenu.js";
 import { INK } from "./tokens.js";
@@ -26,7 +26,11 @@ export interface LaunchRecent {
   readonly action?: ReactNode;
 }
 
-export interface LaunchProps {
+/**
+ * `title` is taken as a plain string rather than the DOM attribute of the same name, so the
+ * inherited type drops it instead of merging two incompatible meanings.
+ */
+export interface LaunchProps extends Omit<HTMLAttributes<HTMLDivElement>, "title" | "children"> {
   /**
    * The app's own mark.
    *
@@ -64,7 +68,6 @@ export interface LaunchProps {
    * build a menu to say so.
    */
   readonly importOptions?: readonly ImportOption[];
-  readonly className?: string;
 }
 
 /**
@@ -97,13 +100,13 @@ export function Launch({
   children,
   footer,
   notice,
-  className,
+  ...rest
 }: LaunchProps) {
   const headingId = useId();
   const chrome = FRAME;
 
   return (
-    <div className={cx(chrome.outer, className)}>
+    <div className={cx(chrome.outer, rest.className)} {...rest}>
       {notice}
       <header className={chrome.header}>
         {mark === undefined ? null : <div className="shrink-0">{mark}</div>}

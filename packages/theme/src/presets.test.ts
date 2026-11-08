@@ -68,6 +68,19 @@ describe.each(PRESETS.map((theme) => [theme.id, theme] as const))("preset %s", (
       }
     });
 
+    it("has readable faint text on every surface", () => {
+      // `ink-faint` is small text, not decoration: it carries a footer, a hint, and the labels
+      // under a theme control. It went ungated while it was assumed to be ornamental, and axe
+      // measured 3.42:1 for it at 11px in the light Suite preset, where 4.5:1 is required.
+      for (const surface of TEXT_SURFACES) {
+        const ratio = ratioOf(values[surface], values["ink-faint"]);
+        expect(
+          ratio,
+          `${id}/${mode}: ink-faint on ${surface} is ${ratio.toFixed(2)}`,
+        ).toBeGreaterThanOrEqual(CONTRAST_TEXT);
+      }
+    });
+
     it("has text that can be read on every filled surface", () => {
       for (const paint of PAINT_ROLES) {
         const ink = PAINT_INK[paint];

@@ -1,6 +1,6 @@
 {
   "name": "@suite/theme",
-  "version": "0.14.0",
+  "version": "0.15.0",
   "description": "The suite's shared palette: role names, WCAG-measured contrast, theme presets and the one function that paints them. Pure data and pure functions; no React, no Electron, no I/O.",
   "type": "module",
   "main": "./dist/index.js",
