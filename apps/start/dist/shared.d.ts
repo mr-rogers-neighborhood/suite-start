@@ -67,6 +67,8 @@ export interface AppCard {
     /** Null for a refused install with no record, because there is nothing to act on. */
     readonly id: string | null;
     readonly name: string;
+    /** The app's own mark, as a data URI, when the hub knows one. */
+    readonly icon: string | null;
     readonly state: AppCardState;
     /** The version installed here, or null when this machine does not have it. */
     readonly version: string | null;

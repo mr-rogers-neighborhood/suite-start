@@ -183,6 +183,23 @@ h3 {
   overflow-wrap: anywhere;
 }
 
+.card-mark {
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  flex: none;
+}
+
+/* The app's mark sits at the start of its name, the way an icon does in a file list. */
+.card-title:has(.card-mark) {
+  justify-content: flex-start;
+  gap: 10px;
+}
+
+.card-title:has(.card-mark) .card-channel {
+  margin-left: auto;
+}
+
 /* A release channel, when it is not the stable one. */
 .card-channel {
   margin-left: auto;

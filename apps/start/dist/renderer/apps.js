@@ -113,6 +113,15 @@ function appCard(card, actions, progress, launchError) {
   node.dataset.state = card.state;
 
   const title = el("div", "card-title");
+  // The app's own mark, so a card and the window it opens look like the same thing.
+  if (card.icon !== null) {
+    const mark = el("img", "card-mark");
+    mark.src = card.icon;
+    mark.alt = "";
+    mark.width = 24;
+    mark.height = 24;
+    title.append(mark);
+  }
   title.append(el("span", "card-name", card.name));
   // What the app honestly is, said quietly. A release channel is a promise about how much
   // to trust the thing; hiding it until someone reads the release notes is not a favour.

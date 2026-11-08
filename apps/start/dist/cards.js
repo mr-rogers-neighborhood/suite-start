@@ -1,4 +1,5 @@
 import { workspaceLink } from "@suite/contracts";
+import { APP_ICONS } from "./appIcons.js";
 import { isNewer, SELF_ID } from "./catalogue.js";
 import { UNREPORTED } from "./reportedUpdate.js";
 /** The folder name a refused install is known by. */
@@ -28,6 +29,7 @@ export function appCards(input) {
     const refused = input.rejected.map((install) => ({
         id: install.id ?? null,
         name: nameFor(install.path),
+        icon: install.id === undefined ? null : (APP_ICONS[install.id] ?? null),
         state: "refused",
         version: null,
         available: null,
@@ -52,6 +54,7 @@ export function appCards(input) {
         return {
             id: entry.id,
             name: found?.manifest.name ?? entry.name,
+            icon: APP_ICONS[entry.id] ?? null,
             state: stateFor(found === null ? null : found.manifest.version, entry.available),
             version: found?.manifest.version ?? null,
             available: entry.available,
@@ -73,6 +76,7 @@ export function appCards(input) {
     const local = [...byId.values()].map((entry) => ({
         id: entry.manifest.id,
         name: entry.manifest.name,
+        icon: APP_ICONS[entry.manifest.id] ?? null,
         state: "local",
         version: entry.manifest.version,
         available: null,
@@ -100,6 +104,7 @@ export function selfCard(entry, version) {
     return {
         id: SELF_ID,
         name: entry.name,
+        icon: null,
         state: entry.available === null
             ? "no-release"
             : isNewer(entry.available, version)
