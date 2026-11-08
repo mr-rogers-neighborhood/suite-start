@@ -1,5 +1,6 @@
 import { type ReactNode, useId } from "react";
 import { cx } from "./cx.js";
+import { ImportMenu, type ImportOption } from "./ImportMenu.js";
 import { INK } from "./tokens.js";
 
 /**
@@ -52,39 +53,35 @@ export interface LaunchProps {
   /** A notice that sits above everything, such as an alpha warning. */
   readonly notice?: ReactNode;
   /**
-   * The chrome around the content.
+   * Ways to bring material in from outside the app: an Obsidian vault, a bank export, a canvas
+   * file from somewhere else.
    *
-   * `page` is a column on the canvas; `card` a centred panel with a shadow, which is what a
-   * canvas-style launcher wants; `bar` a full-height layout whose heading is a compact horizontal
-   * strip, which is what a document-list-first app wants.
+   * Kept apart from `actions` because it answers a different question. New and Open are about
+   * the app's own documents; import is about someone else's. A person who has never imported
+   * anything should be able to read the row and know which one never loses their data.
    *
-   * Three, because the three apps genuinely had three. Imposing one would have been a redesign
-   * dressed as a refactor — what is worth sharing is the *content* and its order, not the frame.
+   * One option renders as a plain button, so an app with a single import path does not have to
+   * build a menu to say so.
    */
-  readonly frame?: "page" | "card" | "bar";
+  readonly importOptions?: readonly ImportOption[];
   readonly className?: string;
 }
 
-const FRAMES = {
-  page: {
-    outer: "mx-auto flex min-h-screen w-full max-w-3xl flex-col gap-8 px-8 py-10",
-    header: "flex items-start gap-4",
-    title: "text-[34px] font-semibold tracking-tight",
-    body: "",
-  },
-  card: {
-    outer:
-      "mx-auto w-[min(760px,100%)] overflow-hidden rounded-2xl border border-[var(--hairline)] bg-[var(--surface)] shadow-[0_30px_80px_-40px_rgba(0,0,0,0.55)]",
-    header: "flex items-end justify-between gap-6 border-b border-[var(--hairline)] px-8 pt-8 pb-7",
-    title: "text-[34px] font-semibold tracking-tight",
-    body: "px-8 py-6",
-  },
-  bar: {
-    outer: "flex h-screen flex-col bg-[var(--canvas)]",
-    header: "flex items-center gap-3 border-b border-[var(--hairline)] px-8 py-5",
-    title: "text-[15px] font-semibold tracking-tight",
-    body: "flex-1 overflow-y-auto px-8 py-8",
-  },
+/**
+ * The frame, of which there is one.
+ *
+ * There were three, because Canvas, Budget and Planner had each drawn their own launcher and a
+ * `frame` prop kept them from diverging further. That was the wrong shape for the goal: three
+ * apps a person moves between should not ask them to re-learn the front door, and a prop that
+ * exists so three screens can differ guarantees they will. The centred card won because it reads
+ * as a place to start rather than as a toolbar above a list.
+ */
+const FRAME = {
+  outer:
+    "mx-auto w-[min(760px,100%)] overflow-hidden rounded-2xl border border-[var(--hairline)] bg-[var(--surface)] shadow-[0_30px_80px_-40px_rgba(0,0,0,0.55)]",
+  header: "flex items-end justify-between gap-6 border-b border-[var(--hairline)] px-8 pt-8 pb-7",
+  title: "text-[34px] font-semibold tracking-tight",
+  body: "px-8 py-6",
 } as const;
 
 export function Launch({
@@ -93,18 +90,17 @@ export function Launch({
   tagline,
   hint,
   actions,
+  importOptions,
   recentEmpty,
   recents = [],
   onOpenRecent,
   children,
   footer,
   notice,
-  frame = "page",
   className,
 }: LaunchProps) {
   const headingId = useId();
-  const chrome = FRAMES[frame];
-  const compact = frame === "bar";
+  const chrome = FRAME;
 
   return (
     <div className={cx(chrome.outer, className)}>
@@ -115,30 +111,24 @@ export function Launch({
           <h1 id={headingId} className={chrome.title}>
             {title}
           </h1>
-          {/* In a compact bar the tagline is the second line of the header, so the rule and
-              the hint would turn a 40px strip into a paragraph. */}
-          {compact ? (
-            <p className={cx("mt-0.5 text-[11px]", INK.muted)}>{hint ?? tagline}</p>
-          ) : (
-            <div className={cx("mt-1 max-w-[420px] text-[13px] leading-5", INK.muted)}>
-              <p>{tagline}</p>
-              {hint === undefined ? null : (
-                <>
-                  <hr className="my-2 border-[var(--hairline)]" />
-                  <p>{hint}</p>
-                </>
-              )}
-            </div>
-          )}
+          <div className={cx("mt-1 max-w-[420px] text-[13px] leading-5", INK.muted)}>
+            <p>{tagline}</p>
+            {hint === undefined ? null : (
+              <>
+                <hr className="my-2 border-[var(--hairline)]" />
+                <p>{hint}</p>
+              </>
+            )}
+          </div>
         </div>
-        {compact && actions !== undefined ? (
-          <div className="ml-auto flex flex-wrap items-center gap-2">{actions}</div>
-        ) : null}
       </header>
 
       <div className={cx(chrome.body, "flex flex-col gap-6")}>
-        {compact || actions === undefined ? null : (
-          <div className="flex flex-wrap items-center gap-2">{actions}</div>
+        {actions === undefined && importOptions === undefined ? null : (
+          <div className="flex flex-wrap items-center gap-2">
+            {actions}
+            {importOptions === undefined ? null : <ImportMenu options={importOptions} />}
+          </div>
         )}
 
         {children}

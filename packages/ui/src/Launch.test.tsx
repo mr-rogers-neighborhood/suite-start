@@ -71,24 +71,29 @@ describe("Launch", () => {
     expect(screen.getByText("Suite is alpha software.")).toBeInTheDocument();
   });
 
-  it("offers the three frames the apps actually had", () => {
-    // One component, three presentations: a page column, a centred card, and a full-height
-    // layout with a compact header bar. Sharing the content is the point; imposing one frame
-    // would have been a redesign.
-    const { container: page } = render(<Launch {...base} frame="page" />);
-    expect(page.firstElementChild?.className).toContain("max-w-3xl");
-
-    const { container: card } = render(<Launch {...base} frame="card" />);
-    expect(card.firstElementChild?.className).toContain("rounded-2xl");
-
-    const { container: bar } = render(<Launch {...base} frame="bar" />);
-    expect(bar.firstElementChild?.className).toContain("h-screen");
+  it("draws one frame, the centred card", () => {
+    // One frame, because three apps a person moves between should not ask them to re-learn
+    // the front door. The centred card is the one that reads as a place to start.
+    const { container } = render(<Launch {...base} />);
+    expect(container.firstElementChild?.className).toContain("rounded-2xl");
+    expect(container.firstElementChild?.className).not.toContain("h-screen");
   });
 
-  it("puts the actions in the header when the frame is a bar", () => {
-    render(<Launch {...base} frame="bar" actions={<button type="button">New budget</button>} />);
-    const header = screen.getByRole("heading", { level: 1 }).closest("header");
-    expect(header).toContainElement(screen.getByRole("button", { name: "New budget" }));
+  it("puts import beside the actions, and only when there is something to import", () => {
+    const vault = { label: "Obsidian vault", onSelect: () => {} };
+    const { container: without } = render(
+      <Launch {...base} actions={<button type="button">New</button>} />,
+    );
+    expect(without.textContent).not.toContain("Import");
+
+    render(
+      <Launch
+        {...base}
+        actions={<button type="button">New</button>}
+        importOptions={[vault, { label: "Suite canvas", onSelect: () => {} }]}
+      />,
+    );
+    expect(screen.getByRole("button", { name: "Import…" })).toBeInTheDocument();
   });
 
   it("takes app-specific content as children", () => {
