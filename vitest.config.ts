@@ -45,6 +45,16 @@ export default defineConfig({
       },
       {
         test: {
+          // A DOM, because these are components and the thing worth testing is what they
+          // render and how they wire ARIA, not that they return JSX.
+          name: "ui",
+          environment: "jsdom",
+          setupFiles: ["packages/ui/src/testSetup.ts"],
+          include: ["packages/ui/src/**/*.test.tsx", "packages/ui/src/**/*.test.ts"],
+        },
+      },
+      {
+        test: {
           name: "start",
           environment: "node",
           include: ["apps/start/src/**/*.test.ts"],
