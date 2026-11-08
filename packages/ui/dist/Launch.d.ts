@@ -1,4 +1,4 @@
-import { type ReactNode } from "react";
+import { type HTMLAttributes, type ReactNode } from "react";
 import { type ImportOption } from "./ImportMenu.js";
 /**
  * The screen a person lands on when no document is open.
@@ -22,7 +22,11 @@ export interface LaunchRecent {
     /** One control per row, usually a menu or a forget button. */
     readonly action?: ReactNode;
 }
-export interface LaunchProps {
+/**
+ * `title` is taken as a plain string rather than the DOM attribute of the same name, so the
+ * inherited type drops it instead of merging two incompatible meanings.
+ */
+export interface LaunchProps extends Omit<HTMLAttributes<HTMLDivElement>, "title" | "children"> {
     /**
      * The app's own mark.
      *
@@ -60,7 +64,6 @@ export interface LaunchProps {
      * build a menu to say so.
      */
     readonly importOptions?: readonly ImportOption[];
-    readonly className?: string;
 }
-export declare function Launch({ mark, title, tagline, hint, actions, importOptions, recentEmpty, recents, onOpenRecent, children, footer, notice, className, }: LaunchProps): import("react").JSX.Element;
+export declare function Launch({ mark, title, tagline, hint, actions, importOptions, recentEmpty, recents, onOpenRecent, children, footer, notice, ...rest }: LaunchProps): import("react").JSX.Element;
 //# sourceMappingURL=Launch.d.ts.map
