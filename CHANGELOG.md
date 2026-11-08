@@ -8,6 +8,10 @@ the apps pin, and are not releases of the launcher.
 
 ## [Unreleased]
 
+No changes yet.
+
+## [0.3.6] - 2026-11-07
+
 ### Fixed
 
 - **Each app's menu entry shows its own icon.** Every entry was given the hub's own mark, so all
