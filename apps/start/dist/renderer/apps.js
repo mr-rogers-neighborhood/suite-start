@@ -177,9 +177,9 @@ function selfRow(card) {
   const sentence = `${why.charAt(0).toUpperCase()}${why.slice(1)}.`;
   const says =
     card.state === "update-available" && card.available !== null
-      ? `${card.available} is published. Start cannot replace its own running binary, so this opens the page where you can.`
+      ? `${card.available} is published. Open the release page to update Start.`
       : card.available !== null
-        ? `${card.available} is the newest release, and Start cannot replace its own running binary.`
+        ? `${card.available} is the newest release.`
         : `${sentence} Start cannot replace its own running binary, so it updates itself.`;
   const note = el("p", "card-meta card-self-note", says);
 

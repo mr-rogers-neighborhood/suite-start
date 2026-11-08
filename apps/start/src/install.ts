@@ -222,6 +222,29 @@ export async function executableInVersion(
   return null;
 }
 
+/**
+ * The installs whose menu entry should be rewritten, given what is on disk.
+ *
+ * A menu entry is written when an app is installed or updated, which leaves one gap: an
+ * entry already on the machine is never revisited. That is how three apps shared one icon
+ * for a whole release — the fix shipped, and the entries nobody replaced kept the old
+ * artwork until their next update.
+ *
+ * So startup repairs them. Only Start's own installs qualify: a copy somebody placed
+ * themselves has no record, and a record whose binary has gone is a card that already says
+ * so. `exists` is injected so this is a rule with a test rather than a walk of the filesystem.
+ */
+export function repairableInstalls(
+  records: readonly { readonly id: string; readonly executable: string }[],
+  appsRoot: string,
+  exists: (path: string) => boolean,
+): readonly { readonly id: string; readonly executable: string }[] {
+  const root = appsRoot.endsWith("/") ? appsRoot : `${appsRoot}/`;
+  return records.filter(
+    (record) => record.executable.startsWith(root) && exists(record.executable),
+  );
+}
+
 /** The base64 SHA-512 of a file, which is the form `electron-builder` writes. */
 export async function fingerprintOfFile(path: string): Promise<string> {
   const hash = createHash("sha512");

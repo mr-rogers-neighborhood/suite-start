@@ -12,6 +12,7 @@ import {
   installedVersions,
   manifestText,
   pruneOtherVersions,
+  repairableInstalls,
 } from "./install.js";
 import { registryStore } from "./installs.js";
 
@@ -262,6 +263,37 @@ describe("pruneOtherVersions", () => {
     // The second install kept the first as the way back, and the record names the new one.
     expect(await installedVersions(appsRoot, planner)).toEqual(["0.2.0", "0.1.0"]);
     expect((await registry.list())[0]?.executable).toContain("0.2.0");
+  });
+});
+
+describe("repairableInstalls", () => {
+  const appsRoot = "/home/person/Applications/Suite";
+
+  it("keeps what this hub installed and can still launch", () => {
+    const records = [
+      { id: "canvas", executable: `${appsRoot}/Canvas/0.1.2/suite-canvas.AppImage` },
+      { id: "planner", executable: `${appsRoot}/Planner/0.1.2/suite-planner.AppImage` },
+    ];
+
+    expect(repairableInstalls(records, appsRoot, () => true)).toEqual(records);
+  });
+
+  it("leaves alone a copy somebody else placed", () => {
+    // A .deb install is not Start's to rewrite, and has no record of Start's to repair.
+    const records = [{ id: "budget", executable: "/opt/suite-budget/suite-budget" }];
+    expect(repairableInstalls(records, appsRoot, () => true)).toEqual([]);
+  });
+
+  it("skips a record whose binary has gone", () => {
+    const records = [
+      { id: "canvas", executable: `${appsRoot}/Canvas/0.1.0/suite-canvas.AppImage` },
+    ];
+    expect(repairableInstalls(records, appsRoot, () => false)).toEqual([]);
+  });
+
+  it("does not confuse a sibling directory with the install root", () => {
+    const records = [{ id: "canvas", executable: `${appsRoot}-old/Canvas/0.1.0/app` }];
+    expect(repairableInstalls(records, appsRoot, () => true)).toEqual([]);
   });
 });
 

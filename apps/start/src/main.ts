@@ -44,7 +44,12 @@ import {
 import { type DocumentsFolder, indexDocuments, isInsideDocuments } from "./fileIndex.js";
 import { StartHost } from "./host.js";
 import { writeHubReport } from "./hubReport.js";
-import { executableInVersion, installApp, installedVersions } from "./install.js";
+import {
+  executableInVersion,
+  installApp,
+  installedVersions,
+  repairableInstalls,
+} from "./install.js";
 import { type RegistryStore, registryStore } from "./installs.js";
 import { launchVerdict } from "./launchCheck.js";
 import { defaultRoots, nodeRegistryFileSystem } from "./nodeFileSystem.js";
@@ -760,6 +765,27 @@ function refreshIconCache(): Promise<void> {
   });
 }
 
+/**
+ * Re-write the menu entry and icon of every app this hub installed.
+ *
+ * Idempotent and cheap — one file and one PNG per app — so it runs at startup rather than
+ * behind a button nobody would press. It is what carries a correction to entries written by
+ * an older build, which is most of them: an entry is only rewritten when its app is installed
+ * or updated, and an app that is already current never is.
+ */
+async function reconcileShortcuts(): Promise<void> {
+  try {
+    const records = await registry.list();
+    const repairable = repairableInstalls(records, applicationsRoot(), (path) => existsSync(path));
+    for (const record of repairable) {
+      const entry = CATALOGUE_APPS.find((candidate) => candidate.id === record.id);
+      if (entry !== undefined) await writeShortcut(entry, record.executable);
+    }
+  } catch (error) {
+    console.warn("[shortcut] could not reconcile the menu entries", error);
+  }
+}
+
 /** Remove an app's entry and icon. Best effort, for the same reason as writing them. */
 async function removeShortcut(id: string): Promise<void> {
   const dirs = shortcutDirs();
@@ -1377,6 +1403,10 @@ if (!gotLock) {
     await show();
 
     void startRefreshHost();
+
+    // After the window, never before it: this is housekeeping, and a person opening the
+    // launcher should not wait for three icons.
+    void reconcileShortcuts();
 
     // The window is up before any feed is read, so a slow network delays a card rather
     // than the launcher. What arrives is broadcast, and the cards redraw.

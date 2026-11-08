@@ -10,6 +10,20 @@ the apps pin, and are not releases of the launcher.
 
 No changes yet.
 
+## [0.3.7] - 2026-11-07
+
+### Fixed
+
+- **A menu entry repairs itself when the hub opens.** An entry is only written when its app is
+  installed or updated, so an app that is already current kept the icon an older build gave it —
+  forever. Startup now rewrites the entry and icon of every app this hub installed, which is how
+  the icon fix reaches a machine that was already up to date.
+
+### Changed
+
+- The Apps, Files and Settings panes describe themselves in one sentence each, and the apps pane
+  is titled Start rather than Apps.
+
 ## [0.3.6] - 2026-11-07
 
 ### Fixed

@@ -170,6 +170,17 @@ body {
   max-width: 52ch;
 }
 
+/* A subtitle under a pane's title. h3 is a section label everywhere else — uppercase,
+   spaced, and with room above it — so the one place it is a subtitle says so. */
+.pane-head h3 {
+  margin: 0 0 6px;
+  font-size: 13px;
+  font-weight: 500;
+  text-transform: none;
+  letter-spacing: 0;
+  color: var(--ink-muted);
+}
+
 .content section > .pane-head {
   margin-bottom: 16px;
 }
