@@ -199,7 +199,9 @@ h3 {
   margin: 0;
   padding: 0;
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  /* 320 rather than 240: a card in its update state carries Open, Update, Roll back and
+     Uninstall, and at 240 they were squeezed until their labels broke over two lines. */
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
   gap: 12px;
 }
 
@@ -304,8 +306,19 @@ h3 {
 
 .card-actions {
   display: flex;
+  flex-wrap: wrap;
+  /* Right-aligned: on a list-width card the actions sit at the end of the row they belong
+     to, instead of leaving the right half of the card empty. */
+  justify-content: flex-end;
   gap: 8px;
   margin-top: 2px;
+}
+
+/* A button is a label, not a paragraph: it keeps its width and wraps to the next row
+   rather than shrinking until "Roll back to 0.1.0" is three lines tall. */
+.card-actions .button {
+  flex: none;
+  white-space: nowrap;
 }
 
 /* A download takes the button's place while it runs, in the same spot on the card. */
