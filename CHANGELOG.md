@@ -10,6 +10,21 @@ the apps pin, and are not releases of the launcher.
 
 No changes yet.
 
+## [0.3.9] - 2026-11-07
+
+### Fixed
+
+- **The sidebar follows the theme.** It was a hardcoded near-white that no theme ever set, so
+  it stayed light in every dark preset.
+- **The page, the cards and the sidebar are three different surfaces.** The page was painted
+  the same role as a card, so in light mode cards were two near-whites with a faint border.
+- **The select controls are fields.** They drew the browser's own grey control beside rounded,
+  themed inputs.
+- **The attention badge uses the ink its theme defines** for a filled danger surface, instead
+  of assuming white.
+- The settings labels no longer shift when a long path appears in a value, and the sidebar's
+  first item is named for the pane it opens.
+
 ## [0.3.8] - 2026-11-07
 
 ### Added
