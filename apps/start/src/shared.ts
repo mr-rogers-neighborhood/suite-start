@@ -18,6 +18,7 @@ export const START_IPC = {
   installApp: "suite:start:install",
   uninstallApp: "suite:start:uninstall",
   rollbackApp: "suite:start:rollback",
+  setTheme: "suite:start:theme",
   revealApp: "suite:start:reveal",
   recents: "suite:start:recents",
   forgetRecent: "suite:start:forget",
@@ -42,6 +43,14 @@ export const START_CHANGED = "suite:start:changed";
 export const START_INSTALL_PROGRESS = "suite:start:install-progress";
 
 export type StartChannel = (typeof START_IPC)[keyof typeof START_IPC];
+
+/**
+ * Which palette the window draws.
+ *
+ * Declared here rather than in `theme.ts` because the page imports this module and that one
+ * reads the filesystem. `theme.ts` owns the rules; this owns the vocabulary.
+ */
+export type ThemeSource = "system" | "light" | "dark";
 
 /** Whether an install can be launched, and why not when it cannot. */
 export type AppHealth = { readonly ok: true } | { readonly ok: false; readonly reason: string };
@@ -172,6 +181,8 @@ export interface StartSettings {
   readonly installRoots: readonly string[];
   /** Where each app Start can see keeps its things. Empty before anything is installed. */
   readonly locations: readonly AppLocation[];
+  /** Which palette the window draws. `system` follows the desktop. */
+  readonly theme: ThemeSource;
 }
 
 export interface LauncherState {

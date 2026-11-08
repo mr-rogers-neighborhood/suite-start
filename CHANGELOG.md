@@ -22,6 +22,8 @@ the apps pin, and are not releases of the launcher.
   you, so the button is not a one-way door.
 - **Settings says where everything is.** Per installed app: the binary, the documents folder and
   the data directory — the same paths the app itself resolves, so they cannot drift.
+- **A theme switch.** The window follows the desktop until you say otherwise; Settings offers
+  Follow the desktop, Light and Dark, and the choice is remembered across restarts.
 
 ## [0.3.5] - 2026-11-07
 

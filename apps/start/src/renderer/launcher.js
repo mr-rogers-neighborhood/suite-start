@@ -48,6 +48,16 @@ const actions = {
     await bridge.rollbackApp(id);
     await refresh();
   },
+  /**
+   * Which palette to draw.
+   *
+   * The next state arrives carrying the answer, so the select keeps whatever was chosen
+   * rather than snapping back to a value the page guessed.
+   */
+  async setTheme(source) {
+    await bridge.setTheme(source);
+    await refresh();
+  },
   async reveal(id) {
     await bridge.revealApp(id);
   },
@@ -107,9 +117,15 @@ function render(state) {
   lastState = state;
   renderApps(visibleApps(state), actions);
   renderFiles(state, actions);
-  renderSettings(state);
+  renderSettings(state, actions);
   renderSync(state, actions);
   document.getElementById("version").textContent = `Suite ${state.version}`;
+
+  // The chosen palette, or none at all so the stylesheet's media query answers. Set from
+  // state rather than from the control, so a choice made in one window is right in the next.
+  const chosen = state.settings.theme;
+  if (chosen === "system") delete document.documentElement.dataset.theme;
+  else document.documentElement.dataset.theme = chosen;
 
   // The rail carries the one number worth acting on, and hides it at zero so a
   // healthy hub is quiet.

@@ -5,7 +5,7 @@ import { dirname, join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import { appDocumentsFolder, hubReportPath, parseDeepLink, SUITE_APPS, suiteApplicationsRoot, suiteDocumentsRoot, suitePaths, } from "@suite/contracts";
 import { desktopCsp, feedUrlFromAppUpdateYml, isTrustedSender, resolveProtocolAsset, } from "@suite/desktop";
-import { app, BrowserWindow, dialog, ipcMain, Menu, net, protocol, shell } from "electron";
+import { app, BrowserWindow, dialog, ipcMain, Menu, nativeTheme, net, protocol, shell, } from "electron";
 import { resolveAppIcon } from "./appIconFile.js";
 import { appCards, fileCards, selfCard } from "./cards.js";
 import { CATALOGUE_APPS, readCatalogue, SELF_ID, withInstalled, } from "./catalogue.js";
@@ -23,6 +23,7 @@ import { readReportedUpdate } from "./reportedUpdate.js";
 import { describeRouteRejection, routeLaunch } from "./route.js";
 import { START_CHANGED, START_INSTALL_PROGRESS, START_IPC, } from "./shared.js";
 import { shortcutIconName, shortcutIconPath, shortcutPath, shortcutText } from "./shortcuts.js";
+import { DEFAULT_THEME, isThemeSource, loadTheme, saveTheme } from "./theme.js";
 import { checkForUpdates } from "./updateCheck.js";
 import { resolveWindowIcon } from "./windowIcon.js";
 /**
@@ -70,6 +71,14 @@ let window = null;
 let registry;
 let recents;
 let dataDirectory = "";
+/**
+ * Which palette the window draws.
+ *
+ * Held in memory and handed to `nativeTheme`, so the page, the title bar and the scrollbars
+ * all answer one source. The stylesheet keeps both palettes and neither needs a second
+ * switch: Electron changes what `prefers-color-scheme` reports.
+ */
+let theme = DEFAULT_THEME;
 let syncHost = null;
 /** The report already on disk, so a restart is visible as a new `startedAt` rather than a new one. */
 let previousHub = null;
@@ -398,6 +407,7 @@ async function state() {
             documentsRoot: documentsRoot(),
             installRoots: [...new Set([...roots(), applicationsRoot()])],
             locations: appLocations(apps),
+            theme,
         },
         version: app.getVersion(),
         sync: await syncState(),
@@ -1034,6 +1044,26 @@ function registerIpc() {
         // Same courtesy an update pays: finish where it started.
         spawnExecutable(executable, [], id);
     });
+    /**
+     * Remember which palette to draw.
+     *
+     * Applied through `nativeTheme` rather than a class on the page: one assignment changes
+     * what every window reports for `prefers-color-scheme`, so the stylesheet keeps one set of
+     * rules and the title bar cannot disagree with the content.
+     */
+    onIpc(START_IPC.setTheme, async (_event, source) => {
+        if (!isThemeSource(source) || source === theme)
+            return;
+        theme = source;
+        nativeTheme.themeSource = source;
+        try {
+            await saveTheme(dataDirectory, source);
+        }
+        catch (error) {
+            console.warn("[theme] could not save the choice", error);
+        }
+        await broadcast();
+    });
     onIpc(START_IPC.recents, async () => (await state()).recents);
     onIpc(START_IPC.forgetRecent, async (_event, path) => {
         if (typeof path !== "string")
@@ -1148,6 +1178,8 @@ else {
     });
     void app.whenReady().then(async () => {
         dataDirectory = process.env.SUITE_START_DATA?.trim() || join(app.getPath("userData"));
+        theme = await loadTheme(dataDirectory);
+        nativeTheme.themeSource = theme;
         registry = registryStore(dataDirectory);
         recents = recentsFile(dataDirectory);
         app.setAppUserModelId("run.suite.start");

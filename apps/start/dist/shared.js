@@ -14,6 +14,7 @@ export const START_IPC = {
     installApp: "suite:start:install",
     uninstallApp: "suite:start:uninstall",
     rollbackApp: "suite:start:rollback",
+    setTheme: "suite:start:theme",
     revealApp: "suite:start:reveal",
     recents: "suite:start:recents",
     forgetRecent: "suite:start:forget",

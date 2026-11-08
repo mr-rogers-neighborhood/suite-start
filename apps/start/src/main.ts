@@ -20,7 +20,17 @@ import {
   isTrustedSender,
   resolveProtocolAsset,
 } from "@suite/desktop";
-import { app, BrowserWindow, dialog, ipcMain, Menu, net, protocol, shell } from "electron";
+import {
+  app,
+  BrowserWindow,
+  dialog,
+  ipcMain,
+  Menu,
+  nativeTheme,
+  net,
+  protocol,
+  shell,
+} from "electron";
 import { resolveAppIcon } from "./appIconFile.js";
 import { appCards, fileCards, selfCard } from "./cards.js";
 import {
@@ -58,8 +68,10 @@ import {
   START_INSTALL_PROGRESS,
   START_IPC,
   type SyncState,
+  type ThemeSource,
 } from "./shared.js";
 import { shortcutIconName, shortcutIconPath, shortcutPath, shortcutText } from "./shortcuts.js";
+import { DEFAULT_THEME, isThemeSource, loadTheme, saveTheme } from "./theme.js";
 import { checkForUpdates } from "./updateCheck.js";
 import { resolveWindowIcon } from "./windowIcon.js";
 
@@ -115,6 +127,14 @@ let window: BrowserWindow | null = null;
 let registry: RegistryStore;
 let recents: RecentsFile;
 let dataDirectory = "";
+/**
+ * Which palette the window draws.
+ *
+ * Held in memory and handed to `nativeTheme`, so the page, the title bar and the scrollbars
+ * all answer one source. The stylesheet keeps both palettes and neither needs a second
+ * switch: Electron changes what `prefers-color-scheme` reports.
+ */
+let theme: ThemeSource = DEFAULT_THEME;
 let syncHost: StartHost | null = null;
 /** The report already on disk, so a restart is visible as a new `startedAt` rather than a new one. */
 let previousHub: SuiteHub | null = null;
@@ -495,6 +515,7 @@ async function state(): Promise<LauncherState> {
       documentsRoot: documentsRoot(),
       installRoots: [...new Set([...roots(), applicationsRoot()])],
       locations: appLocations(apps),
+      theme,
     },
     version: app.getVersion(),
     sync: await syncState(),
@@ -1157,6 +1178,25 @@ function registerIpc(): void {
     spawnExecutable(executable, [], id);
   });
 
+  /**
+   * Remember which palette to draw.
+   *
+   * Applied through `nativeTheme` rather than a class on the page: one assignment changes
+   * what every window reports for `prefers-color-scheme`, so the stylesheet keeps one set of
+   * rules and the title bar cannot disagree with the content.
+   */
+  onIpc(START_IPC.setTheme, async (_event, source: unknown) => {
+    if (!isThemeSource(source) || source === theme) return;
+    theme = source;
+    nativeTheme.themeSource = source;
+    try {
+      await saveTheme(dataDirectory, source);
+    } catch (error) {
+      console.warn("[theme] could not save the choice", error);
+    }
+    await broadcast();
+  });
+
   onIpc(START_IPC.recents, async () => (await state()).recents);
 
   onIpc(START_IPC.forgetRecent, async (_event, path: unknown) => {
@@ -1273,6 +1313,8 @@ if (!gotLock) {
 
   void app.whenReady().then(async () => {
     dataDirectory = process.env.SUITE_START_DATA?.trim() || join(app.getPath("userData"));
+    theme = await loadTheme(dataDirectory);
+    nativeTheme.themeSource = theme;
     registry = registryStore(dataDirectory);
     recents = recentsFile(dataDirectory);
     app.setAppUserModelId("run.suite.start");

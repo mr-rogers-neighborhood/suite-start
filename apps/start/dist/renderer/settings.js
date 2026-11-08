@@ -4,7 +4,7 @@ import { el } from "./format.js";
 const SUPPORT_URL = "https://github.com/mr-rogers-neighborhood/suite-start";
 
 /** Settings reports what Start knows about itself, and nothing it does not. */
-export function renderSettings(state) {
+export function renderSettings(state, actions) {
   const list = document.getElementById("settings");
   if (!list) return;
   list.replaceChildren();
@@ -28,6 +28,27 @@ export function renderSettings(state) {
       "ask for. The host listens for devices; see Sync.",
   );
   pair("Version", state.version);
+
+  // The window follows the desktop until somebody says otherwise. A select rather than a
+  // switch because the third answer — "follow the desktop" — is the one most people want
+  // and the one a two-state control cannot express.
+  const themeRow = el("dd");
+  const theme = el("select");
+  theme.id = "theme";
+  theme.setAttribute("aria-label", "Appearance");
+  for (const [value, label] of [
+    ["system", "Follow the desktop"],
+    ["light", "Light"],
+    ["dark", "Dark"],
+  ]) {
+    const option = el("option", null, label);
+    option.value = value;
+    if (state.settings.theme === value) option.selected = true;
+    theme.append(option);
+  }
+  theme.addEventListener("change", () => actions?.setTheme?.(theme.value));
+  themeRow.append(theme);
+  list.append(el("dt", null, "Appearance"), themeRow);
 
   // The one ask in the product: a URL, no account, nothing gated. The window
   // handler opens `https` in the system browser, so this is a plain link and not
