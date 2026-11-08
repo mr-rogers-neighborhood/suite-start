@@ -58,7 +58,7 @@ export const solarized: SuiteTheme = {
     "surface-strong": "#0a3944",
     accent: "#4aa8e0",
     "accent-strong": "#6fbceb",
-    danger: "#e8695f",
+    danger: "#eb8077",
     success: "#9fb800",
     warning: "#d4ac2c",
     ink: "#a3b1b1",
