@@ -1,7 +1,7 @@
 /**
  * `@suite/ui` — the primitives the suite shares.
  *
- * Eight exports, chosen because the apps already had most of them separately and had already
+ * Nine exports, chosen because the apps already had most of them separately and had already
  * drifted: two `Button`s with different variants and different hardcoded ink on a themed paint.
  *
  * Every colour is `var(--role)` from `@suite/theme`, never a Tailwind theme name and never a
@@ -19,6 +19,7 @@
  *
  * 3. React 19 is a peer, not a dependency.
  */
+export { AppMark } from "./AppMark.js";
 export { Button } from "./Button.js";
 export { cx } from "./cx.js";
 export { Dialog } from "./Dialog.js";

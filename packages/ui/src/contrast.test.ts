@@ -20,6 +20,9 @@ function roleOf(className: string | undefined): string | null {
 
 /** Every pair a primitive can put on screen, as (background class, ink class). */
 const PAIRS: readonly { readonly name: string; readonly on: string; readonly ink: string }[] = [
+  // The mark is the same pair as a filled button — accent behind, on-accent in front — which is
+  // the reason one tile works for all three apps in every preset.
+  { name: "AppMark tile", on: "bg-[var(--accent)]", ink: "text-[var(--on-accent)]" },
   { name: "Button primary", on: "bg-[var(--accent)]", ink: INK_ON.accent },
   { name: "Button danger", on: "bg-[var(--danger)]", ink: INK_ON.danger },
   { name: "Button secondary", on: SURFACE.base, ink: INK.base },
