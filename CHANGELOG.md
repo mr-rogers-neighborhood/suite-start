@@ -10,6 +10,22 @@ the apps pin, and are not releases of the launcher.
 
 No changes yet.
 
+## [0.3.8] - 2026-11-07
+
+### Added
+
+- **Three colour themes, each in light and dark.** Suite (unchanged), Solarized in its two
+  official variants, and Warm: charcoal and amber, in the spirit of Logseq. Settings offers a
+  Theme list and a Brightness toggle, because those are two questions.
+- **Every colour is now a named role** with a companion ink, so a filled button can never end
+  up with text the theme did not check. The values are measured against WCAG 2.2 AA in the
+  build gate: 4.5:1 for text, 3:1 for focus rings and component edges.
+
+### Fixed
+
+- A text field's border is a component boundary, so it now clears 3:1 rather than using the
+  decorative hairline. The focus ring uses its own role.
+
 ## [0.3.7] - 2026-11-07
 
 ### Fixed
