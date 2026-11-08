@@ -1,7 +1,7 @@
 /**
  * `@suite/ui` — the primitives the suite shares.
  *
- * Nine exports, chosen because the apps already had most of them separately and had already
+ * Ten exports, chosen because the apps already had most of them separately and had already
  * drifted: two `Button`s with different variants and different hardcoded ink on a themed paint.
  *
  * Every colour is `var(--role)` from `@suite/theme`, never a Tailwind theme name and never a
@@ -26,6 +26,7 @@ export { Dialog } from "./Dialog.js";
 export { EmptyState } from "./EmptyState.js";
 export { Field } from "./Field.js";
 export { IconButton } from "./IconButton.js";
+export { ImportMenu } from "./ImportMenu.js";
 export { Launch, } from "./Launch.js";
 export { Modal } from "./Modal.js";
 export { PRIVACY_SENTENCE, PrivacyLine } from "./PrivacyLine.js";

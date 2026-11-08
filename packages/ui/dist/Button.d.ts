@@ -1,4 +1,4 @@
-import type { ButtonHTMLAttributes, ReactNode } from "react";
+import type { ComponentProps, ReactNode } from "react";
 /**
  * A button.
  *
@@ -10,7 +10,7 @@ import type { ButtonHTMLAttributes, ReactNode } from "react";
  */
 export type ButtonVariant = "primary" | "secondary" | "ghost" | "danger";
 export type ButtonSize = "sm" | "md";
-export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
+export interface ButtonProps extends ComponentProps<"button"> {
     readonly variant?: ButtonVariant;
     readonly size?: ButtonSize;
     /** A glyph before the label. Decorative, so give the button an accessible name in text. */

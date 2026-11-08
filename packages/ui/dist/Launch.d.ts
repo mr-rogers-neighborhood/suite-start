@@ -1,4 +1,5 @@
 import { type ReactNode } from "react";
+import { type ImportOption } from "./ImportMenu.js";
 /**
  * The screen a person lands on when no document is open.
  *
@@ -48,17 +49,18 @@ export interface LaunchProps {
     /** A notice that sits above everything, such as an alpha warning. */
     readonly notice?: ReactNode;
     /**
-     * The chrome around the content.
+     * Ways to bring material in from outside the app: an Obsidian vault, a bank export, a canvas
+     * file from somewhere else.
      *
-     * `page` is a column on the canvas; `card` a centred panel with a shadow, which is what a
-     * canvas-style launcher wants; `bar` a full-height layout whose heading is a compact horizontal
-     * strip, which is what a document-list-first app wants.
+     * Kept apart from `actions` because it answers a different question. New and Open are about
+     * the app's own documents; import is about someone else's. A person who has never imported
+     * anything should be able to read the row and know which one never loses their data.
      *
-     * Three, because the three apps genuinely had three. Imposing one would have been a redesign
-     * dressed as a refactor — what is worth sharing is the *content* and its order, not the frame.
+     * One option renders as a plain button, so an app with a single import path does not have to
+     * build a menu to say so.
      */
-    readonly frame?: "page" | "card" | "bar";
+    readonly importOptions?: readonly ImportOption[];
     readonly className?: string;
 }
-export declare function Launch({ mark, title, tagline, hint, actions, recentEmpty, recents, onOpenRecent, children, footer, notice, frame, className, }: LaunchProps): import("react").JSX.Element;
+export declare function Launch({ mark, title, tagline, hint, actions, importOptions, recentEmpty, recents, onOpenRecent, children, footer, notice, className, }: LaunchProps): import("react").JSX.Element;
 //# sourceMappingURL=Launch.d.ts.map
