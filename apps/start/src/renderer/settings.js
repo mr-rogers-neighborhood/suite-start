@@ -17,15 +17,18 @@ export function renderSettings(state, actions) {
 
   pair("Data directory", state.settings.dataDirectory);
   pair("Documents", state.settings.documentsRoot);
+  // What a reader can act on, in one idea per sentence. The ruling on who owns an update lives
+  // in ADR-0001; a person only needs to know which apps update themselves and which wait for
+  // them to press something.
   pair(
     "Updates",
-    "Start checks each app's signed feed when this window opens, and installs only what you press. " +
-      "An app Start installed leaves its own updating to Start; a copy you placed yourself keeps its own.",
+    "Start updates the apps it installed, and only when you press Update. It checks for new " +
+      "versions when this window opens. An app you installed another way updates itself.",
   );
   pair(
     "Network",
-    "Reading those feeds is the only request Start makes, and it never downloads anything you did not " +
-      "ask for. The host listens for devices; see Sync.",
+    "Start goes online to check for new versions and to download the ones you ask for. Nothing " +
+      "else leaves this machine.",
   );
   pair("Version", state.version);
 

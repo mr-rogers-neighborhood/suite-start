@@ -34,7 +34,16 @@ export function renderSync(state, actions) {
 
   const head = el("header", "pane-head");
   head.append(el("h2", null, "Sync"));
-  head.append(el("p", "pane-note", sync.running ? "Sync is enabled." : "Sync is disabled."));
+  // A consequence, not a restatement of the heading above it.
+  head.append(
+    el(
+      "p",
+      "pane-note",
+      sync.running
+        ? "On. Other devices can reach this machine."
+        : "Off. Nothing can reach this machine.",
+    ),
+  );
   panel.append(head);
 
   panel.append(addressBlock(sync, actions));
