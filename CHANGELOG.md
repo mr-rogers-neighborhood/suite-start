@@ -10,6 +10,13 @@ the apps pin, and are not releases of the launcher.
 
 No changes yet.
 
+## [0.3.11] - 2026-11-07
+
+### Added
+
+- **The hub wears the suite's own mark**, beside its name in the sidebar. It is drawn in the
+  theme's ink, so it belongs in Solarized and Warm instead of being a fixed black or white.
+
 ## [0.3.10] - 2026-11-07
 
 ### Changed
