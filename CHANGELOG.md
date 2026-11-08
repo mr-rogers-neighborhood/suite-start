@@ -10,6 +10,22 @@ the apps pin, and are not releases of the launcher.
 
 No changes yet.
 
+## [0.3.12] - 2026-11-08
+
+### Added
+
+- A density axis on the shared primitives, in the three names the mobile container already
+  publishes. `comfortable` reaches a 44px control, which is what touch accessibility asks for, and
+  the default reproduces today's 36px exactly.
+- Named type sizes, keeping the five values that were actually in use.
+
+### Changed
+
+- `Launch` draws one centred card for all four apps. It used to offer three frames so each app could
+  keep its own launcher; that was the wrong shape for the goal, because three screens a person
+  moves between should not ask them to relearn the front door.
+- Faint text meets 4.5:1 in every preset. It was 3.42:1 on white at 11px, and the palette gate never
+  checked the role because it was listed among the marks.
 ## [0.3.11] - 2026-11-07
 
 ### Added
