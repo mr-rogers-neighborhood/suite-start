@@ -15,6 +15,17 @@ export {
   suiteSemverSchema,
 } from "./appManifest.js";
 export {
+  isArtifactCompatible,
+  parseSuiteArtifact,
+  SUITE_ARTIFACT_CONTRACT_VERSION,
+  SUITE_ARTIFACT_FORMAT,
+  type SuiteArtifact,
+  suiteArtifactFileSchema,
+  suiteArtifactKindSchema,
+  suiteArtifactSchema,
+  suiteArtifactSignatureSchema,
+} from "./artifact.js";
+export {
   CONTRACT_VERSION,
   compareSemver,
   isContractCompatible,
