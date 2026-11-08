@@ -20,8 +20,13 @@ export interface ShortcutInput {
     readonly executable: string;
     /** What the app opens, for the sentence under its name. */
     readonly extensions: readonly string[];
-    /** The icon name a theme lookup uses, without a size or extension. */
-    readonly iconName: string;
+    /**
+     * The icon name a theme lookup uses, without a size or extension.
+     *
+     * Null when this build has no artwork for the app: the entry then carries no `Icon=` line
+     * rather than naming a file that is not there.
+     */
+    readonly iconName: string | null;
 }
 /** The entry's file name, which is also how it is found again. */
 export declare function shortcutFilename(id: string): string;
@@ -42,8 +47,28 @@ export declare function shortcutIconPath(platform: string, home: string, iconNam
  * under this entry instead of drawing a second, generic icon.
  */
 export declare function shortcutText(input: ShortcutInput): string;
-/** The icon name one app's shortcut uses. */
-export declare function shortcutIconName(id: string): string;
+/**
+ * The icon name one app's shortcut uses, for artwork with this content.
+ *
+ * The content is in the name because a desktop caches an icon **by name**. Rewriting
+ * `suite-canvas.png` leaves KDE and GTK drawing the pixmap they already resolved: the file is
+ * new, the picture on screen is not, and it stays that way for the session. A name that changes
+ * when the bytes change cannot be served from a cache, on any desktop, without asking anyone to
+ * log out.
+ *
+ * `digest` is a short hex hash of the icon's bytes; eight characters is plenty to separate two
+ * artworks and short enough to read in a `.desktop` file.
+ */
+export declare function shortcutIconName(id: string, digest: string): string;
+/** The name every earlier build used for one app's icon, which pruning still recognises. */
+export declare function legacyIconName(id: string): string;
+/**
+ * Whether an icon in the apps directory belongs to one app.
+ *
+ * Matches the unversioned name an older build wrote and every hashed name for this id, and
+ * nothing else — `suite-canvas` must not match `suite-canvasfoo`.
+ */
+export declare function isIconOf(id: string, name: string): boolean;
 /**
  * The `WM_CLASS` a bundled app actually reports.
  *

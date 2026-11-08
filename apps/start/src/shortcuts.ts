@@ -22,8 +22,13 @@ export interface ShortcutInput {
   readonly executable: string;
   /** What the app opens, for the sentence under its name. */
   readonly extensions: readonly string[];
-  /** The icon name a theme lookup uses, without a size or extension. */
-  readonly iconName: string;
+  /**
+   * The icon name a theme lookup uses, without a size or extension.
+   *
+   * Null when this build has no artwork for the app: the entry then carries no `Icon=` line
+   * rather than naming a file that is not there.
+   */
+  readonly iconName: string | null;
 }
 
 /** The entry's file name, which is also how it is found again. */
@@ -81,7 +86,7 @@ export function shortcutText(input: ShortcutInput): string {
     `Name=${input.name}`,
     `Comment=Opens ${input.extensions.join(", ") || "documents"} with ${input.name}`,
     `Exec=${quoted(input.executable)} %U`,
-    `Icon=${input.iconName}`,
+    ...(input.iconName === null ? [] : [`Icon=${input.iconName}`]),
     "Terminal=false",
     "Categories=Utility;Office;",
     `StartupWMClass=${wmClassFor(input.id)}`,
@@ -97,9 +102,36 @@ export function shortcutText(input: ShortcutInput): string {
   return `${lines.join("\n")}\n`;
 }
 
-/** The icon name one app's shortcut uses. */
-export function shortcutIconName(id: string): string {
+/**
+ * The icon name one app's shortcut uses, for artwork with this content.
+ *
+ * The content is in the name because a desktop caches an icon **by name**. Rewriting
+ * `suite-canvas.png` leaves KDE and GTK drawing the pixmap they already resolved: the file is
+ * new, the picture on screen is not, and it stays that way for the session. A name that changes
+ * when the bytes change cannot be served from a cache, on any desktop, without asking anyone to
+ * log out.
+ *
+ * `digest` is a short hex hash of the icon's bytes; eight characters is plenty to separate two
+ * artworks and short enough to read in a `.desktop` file.
+ */
+export function shortcutIconName(id: string, digest: string): string {
+  return `suite-${id}-${digest}`;
+}
+
+/** The name every earlier build used for one app's icon, which pruning still recognises. */
+export function legacyIconName(id: string): string {
   return `suite-${id}`;
+}
+
+/**
+ * Whether an icon in the apps directory belongs to one app.
+ *
+ * Matches the unversioned name an older build wrote and every hashed name for this id, and
+ * nothing else — `suite-canvas` must not match `suite-canvasfoo`.
+ */
+export function isIconOf(id: string, name: string): boolean {
+  if (name === `${legacyIconName(id)}.png`) return true;
+  return name.startsWith(`${legacyIconName(id)}-`) && name.endsWith(".png");
 }
 
 /**

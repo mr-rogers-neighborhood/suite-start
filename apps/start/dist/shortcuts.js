@@ -35,7 +35,7 @@ export function shortcutText(input) {
         `Name=${input.name}`,
         `Comment=Opens ${input.extensions.join(", ") || "documents"} with ${input.name}`,
         `Exec=${quoted(input.executable)} %U`,
-        `Icon=${input.iconName}`,
+        ...(input.iconName === null ? [] : [`Icon=${input.iconName}`]),
         "Terminal=false",
         "Categories=Utility;Office;",
         `StartupWMClass=${wmClassFor(input.id)}`,
@@ -48,9 +48,35 @@ export function shortcutText(input) {
     }
     return `${lines.join("\n")}\n`;
 }
-/** The icon name one app's shortcut uses. */
-export function shortcutIconName(id) {
+/**
+ * The icon name one app's shortcut uses, for artwork with this content.
+ *
+ * The content is in the name because a desktop caches an icon **by name**. Rewriting
+ * `suite-canvas.png` leaves KDE and GTK drawing the pixmap they already resolved: the file is
+ * new, the picture on screen is not, and it stays that way for the session. A name that changes
+ * when the bytes change cannot be served from a cache, on any desktop, without asking anyone to
+ * log out.
+ *
+ * `digest` is a short hex hash of the icon's bytes; eight characters is plenty to separate two
+ * artworks and short enough to read in a `.desktop` file.
+ */
+export function shortcutIconName(id, digest) {
+    return `suite-${id}-${digest}`;
+}
+/** The name every earlier build used for one app's icon, which pruning still recognises. */
+export function legacyIconName(id) {
     return `suite-${id}`;
+}
+/**
+ * Whether an icon in the apps directory belongs to one app.
+ *
+ * Matches the unversioned name an older build wrote and every hashed name for this id, and
+ * nothing else — `suite-canvas` must not match `suite-canvasfoo`.
+ */
+export function isIconOf(id, name) {
+    if (name === `${legacyIconName(id)}.png`)
+        return true;
+    return name.startsWith(`${legacyIconName(id)}-`) && name.endsWith(".png");
 }
 /**
  * The `WM_CLASS` a bundled app actually reports.

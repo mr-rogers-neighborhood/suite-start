@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
+  isIconOf,
+  legacyIconName,
   shortcutFilename,
+  shortcutIconName,
   shortcutIconPath,
   shortcutPath,
   shortcutText,
@@ -14,6 +17,31 @@ const planner = {
   extensions: ["planner"],
   iconName: "suite-planner",
 };
+
+describe("shortcutIconName", () => {
+  it("carries the content, so a shell cannot serve a cached picture", () => {
+    // The bug this prevents: rewriting suite-canvas.png leaves KDE drawing the old pixmap
+    // for the session. A name that changes with the bytes cannot be cached under.
+    expect(shortcutIconName("canvas", "c3b333aa")).toBe("suite-canvas-c3b333aa");
+    expect(shortcutIconName("canvas", "c3b333aa")).not.toBe(shortcutIconName("canvas", "deadbeef"));
+  });
+});
+
+describe("isIconOf", () => {
+  it("recognises the hashed name and the unversioned one an older build wrote", () => {
+    expect(isIconOf("canvas", "suite-canvas-c3b333aa.png")).toBe(true);
+    expect(isIconOf("canvas", `${legacyIconName("canvas")}.png`)).toBe(true);
+  });
+
+  it("leaves another app's icon alone", () => {
+    expect(isIconOf("canvas", "suite-planner-7be0e86f.png")).toBe(false);
+    expect(isIconOf("canvas", "suite-start.png")).toBe(false);
+  });
+
+  it("does not match a longer id that merely starts the same way", () => {
+    expect(isIconOf("canvas", "suite-canvasfoo.png")).toBe(false);
+  });
+});
 
 describe("shortcutFilename", () => {
   it("is one file per app, so an update rewrites rather than accumulates", () => {

@@ -1,6 +1,7 @@
 import { spawn } from "node:child_process";
+import { createHash } from "node:crypto";
 import { existsSync } from "node:fs";
-import { copyFile, mkdir, readFile, rm, writeFile } from "node:fs/promises";
+import { mkdir, readdir, readFile, rm, writeFile } from "node:fs/promises";
 import { dirname, join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import {
@@ -75,7 +76,13 @@ import {
   type SyncState,
   type ThemeSource,
 } from "./shared.js";
-import { shortcutIconName, shortcutIconPath, shortcutPath, shortcutText } from "./shortcuts.js";
+import {
+  isIconOf,
+  shortcutIconName,
+  shortcutIconPath,
+  shortcutPath,
+  shortcutText,
+} from "./shortcuts.js";
 import { DEFAULT_THEME, isThemeSource, loadTheme, saveTheme } from "./theme.js";
 import { checkForUpdates } from "./updateCheck.js";
 import { resolveWindowIcon } from "./windowIcon.js";
@@ -711,13 +718,18 @@ function shortcutDirs(): { entry: (id: string) => string; icon: (name: string) =
  */
 async function writeShortcut(entry: CatalogueEntry, executable: string): Promise<void> {
   const dirs = shortcutDirs();
-  const iconName = shortcutIconName(entry.id);
+  let iconName: string | null = null;
   try {
     const iconSource = appIcon(entry.id);
     if (iconSource !== null) {
+      const bytes = await readFile(iconSource);
+      // The name carries the content, so no desktop can serve a cached picture under it
+      // (§shortcutIconName). Eight hex characters is a fingerprint, not a security boundary.
+      iconName = shortcutIconName(entry.id, iconDigest(bytes));
       const destination = dirs.icon(iconName);
       await mkdir(dirname(destination), { recursive: true });
-      await copyFile(iconSource, destination);
+      await writeFile(destination, bytes);
+      await pruneIcons(entry.id, iconName);
       await refreshIconCache();
     } else {
       console.warn(`[shortcut] no artwork for ${entry.id}; its entry keeps a generic icon`);
@@ -731,6 +743,8 @@ async function writeShortcut(entry: CatalogueEntry, executable: string): Promise
         name: entry.name,
         executable,
         extensions: [...entry.extensions],
+        // Null rather than a name with nothing behind it: an entry pointing at a missing
+        // icon draws a generic placeholder, and one with no `Icon=` line at least says why.
         iconName,
       }),
     );
@@ -742,6 +756,33 @@ async function writeShortcut(entry: CatalogueEntry, executable: string): Promise
   } catch (error) {
     console.warn(`[shortcut] could not write the entry for ${entry.id}`, error);
   }
+}
+
+/** A short, stable fingerprint of an icon's bytes, for the name it is written under. */
+function iconDigest(bytes: Uint8Array): string {
+  return createHash("sha256").update(bytes).digest("hex").slice(0, 8);
+}
+
+/**
+ * Remove the icons earlier builds left for one app.
+ *
+ * Hashed names are why this exists: every new artwork leaves the old file behind, and a
+ * directory of orphans is the same problem as a menu entry pointing at a version that was
+ * deleted. Only this app's own names are touched (§isIconOf).
+ */
+async function pruneIcons(id: string, keep: string): Promise<void> {
+  const directory = dirname(shortcutDirs().icon(keep));
+  let names: string[];
+  try {
+    names = await readdir(directory);
+  } catch {
+    return;
+  }
+  await Promise.all(
+    names
+      .filter((name) => name !== `${keep}.png` && isIconOf(id, name))
+      .map((name) => rm(join(directory, name), { force: true }).catch(() => undefined)),
+  );
 }
 
 /**
@@ -790,7 +831,18 @@ async function reconcileShortcuts(): Promise<void> {
 async function removeShortcut(id: string): Promise<void> {
   const dirs = shortcutDirs();
   await rm(dirs.entry(id), { force: true }).catch(() => undefined);
-  await rm(dirs.icon(shortcutIconName(id)), { force: true }).catch(() => undefined);
+  // Every icon this app ever wrote, not one guessed name: the names are content-addressed
+  // and an uninstall that leaves three PNGs behind is the same lie by omission as before.
+  const directory = dirname(dirs.icon("unused"));
+  await readdir(directory)
+    .then((names) =>
+      Promise.all(
+        names
+          .filter((name) => isIconOf(id, name))
+          .map((name) => rm(join(directory, name), { force: true }).catch(() => undefined)),
+      ),
+    )
+    .catch(() => undefined);
 }
 
 /**
