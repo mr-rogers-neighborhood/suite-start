@@ -6,7 +6,13 @@ import { parseAppManifest } from "@suite/contracts";
 import type { FeedArtifact } from "@suite/desktop";
 import { afterEach, describe, expect, it } from "vitest";
 import { CATALOGUE_APPS, type CatalogueEntry } from "./catalogue.js";
-import { installApp, installedVersions, manifestText, pruneOtherVersions } from "./install.js";
+import {
+  executableInVersion,
+  installApp,
+  installedVersions,
+  manifestText,
+  pruneOtherVersions,
+} from "./install.js";
 import { registryStore } from "./installs.js";
 
 const planner: CatalogueEntry = CATALOGUE_APPS[1];
@@ -175,7 +181,28 @@ describe("installApp", () => {
 });
 
 describe("pruneOtherVersions", () => {
-  it("removes every version but the one that was just placed", async () => {
+  it("keeps the version it replaced, and removes everything older", async () => {
+    const { appsRoot } = await workspace();
+    const registry = registryStore(join(appsRoot, "..", "data"));
+    for (const version of ["0.1.0", "0.2.0", "0.3.0"]) {
+      await installApp({
+        entry: planner,
+        version,
+        artifact: artifactFor(bytesOf(version)),
+        feed: "https://example.test/planner",
+        appsRoot,
+        registry,
+        download: async (_url, destination) => writeFile(destination, bytesOf(version)),
+      });
+    }
+
+    await pruneOtherVersions(appsRoot, planner, "0.3.0");
+
+    // One step back is the promise; a version history is not.
+    expect(await installedVersions(appsRoot, planner)).toEqual(["0.3.0", "0.2.0"]);
+  });
+
+  it("keeps nothing extra when told to retain none", async () => {
     const { appsRoot } = await workspace();
     const registry = registryStore(join(appsRoot, "..", "data"));
     for (const version of ["0.1.0", "0.2.0"]) {
@@ -190,8 +217,30 @@ describe("pruneOtherVersions", () => {
       });
     }
 
-    await pruneOtherVersions(appsRoot, planner, "0.2.0");
+    await pruneOtherVersions(appsRoot, planner, "0.2.0", 0);
     expect(await installedVersions(appsRoot, planner)).toEqual(["0.2.0"]);
+  });
+
+  it("is the same after a rollback as before it", async () => {
+    // A rollback walks back down, and pruning reads the disk rather than a history, so the
+    // direction must not matter.
+    const { appsRoot } = await workspace();
+    const registry = registryStore(join(appsRoot, "..", "data"));
+    for (const version of ["0.1.0", "0.2.0"]) {
+      await installApp({
+        entry: planner,
+        version,
+        artifact: artifactFor(bytesOf(version)),
+        feed: "https://example.test/planner",
+        appsRoot,
+        registry,
+        download: async (_url, destination) => writeFile(destination, bytesOf(version)),
+      });
+    }
+
+    await pruneOtherVersions(appsRoot, planner, "0.1.0");
+
+    expect(await installedVersions(appsRoot, planner)).toEqual(["0.2.0", "0.1.0"]);
   });
 
   it("is what an update asks for, and a first install does not", async () => {
@@ -210,9 +259,36 @@ describe("pruneOtherVersions", () => {
       });
     }
 
-    // The second install pruned the first: one version, the one the record names.
-    expect(await installedVersions(appsRoot, planner)).toEqual(["0.2.0"]);
+    // The second install kept the first as the way back, and the record names the new one.
+    expect(await installedVersions(appsRoot, planner)).toEqual(["0.2.0", "0.1.0"]);
     expect((await registry.list())[0]?.executable).toContain("0.2.0");
+  });
+});
+
+describe("executableInVersion", () => {
+  it("finds the artifact beside a kept version, not the manifest", async () => {
+    const { appsRoot } = await workspace();
+    const kept = bytesOf("kept for a rollback");
+    await installApp({
+      entry: planner,
+      version: "0.2.0",
+      artifact: artifactFor(kept),
+      feed: "https://example.test/planner",
+      appsRoot,
+      registry: registryStore(join(appsRoot, "..", "data")),
+      download: async (_url, destination) => writeFile(destination, kept),
+    });
+
+    const executable = await executableInVersion(appsRoot, planner, "0.2.0");
+
+    expect(executable).toBe(
+      join(appsRoot, "Planner", "0.2.0", "suite-planner-0.2.0-x86_64.AppImage"),
+    );
+  });
+
+  it("answers null for a version that is not on disk", async () => {
+    const { appsRoot } = await workspace();
+    expect(await executableInVersion(appsRoot, planner, "9.9.9")).toBeNull();
   });
 });
 

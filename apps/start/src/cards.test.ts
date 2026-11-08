@@ -133,6 +133,35 @@ describe("appCards", () => {
     });
   });
 
+  it("offers the version it replaced, and only when one is on disk", () => {
+    const withPrevious = appCards({
+      apps: [discovered()],
+      rejected: [],
+      files: [],
+      recents: [],
+      updates: NO_UPDATES,
+      catalogue: [offered({ available: "0.2.0", installed: "0.2.0" })],
+      versions: new Map([["canvas", 2]]),
+      previous: new Map([["canvas", "0.1.0"]]),
+      running: NO_RUNNING,
+      appsRoot: APPS_ROOT,
+    });
+    expect(withPrevious[0]?.previousVersion).toBe("0.1.0");
+
+    const withoutOne = appCards({
+      apps: [discovered()],
+      rejected: [],
+      files: [],
+      recents: [],
+      updates: NO_UPDATES,
+      catalogue: [offered({ available: "0.2.0", installed: "0.2.0" })],
+      versions: NO_VERSIONS,
+      running: NO_RUNNING,
+      appsRoot: APPS_ROOT,
+    });
+    expect(withoutOne[0]?.previousVersion).toBeNull();
+  });
+
   it("says up to date when the installed version is the offered one", () => {
     const [card] = appCards({
       apps: [discovered()],

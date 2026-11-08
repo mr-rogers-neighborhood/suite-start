@@ -15,6 +15,7 @@ export declare const START_IPC: {
     readonly removeApp: "suite:start:remove";
     readonly installApp: "suite:start:install";
     readonly uninstallApp: "suite:start:uninstall";
+    readonly rollbackApp: "suite:start:rollback";
     readonly revealApp: "suite:start:reveal";
     readonly recents: "suite:start:recents";
     readonly forgetRecent: "suite:start:forget";
@@ -81,6 +82,14 @@ export interface AppCard {
     /** How many versions of this app are on disk here. */
     readonly versions: number;
     /**
+     * The version a rollback would return to, or null when there is nothing to go back to.
+     *
+     * Only ever a version already on this machine. It is offered, never taken automatically:
+     * going back is a decision, and a hub that silently reverted an update would be doing the
+     * thing this card exists to make visible.
+     */
+    readonly previousVersion: string | null;
+    /**
      * Whether the process Start started is still alive.
      *
      * Only ever true for an app Start launched this session: a window opened from the menu
@@ -123,10 +132,31 @@ export interface RefusedInstall {
     readonly reason: string;
 }
 /** What Start knows about itself, for the Settings pane. */
+/**
+ * One installed app, and every place it keeps something.
+ *
+ * The point of the list is that a person can leave: knowing where the binary, the
+ * machine-local state and the documents are is what makes "uninstall this" a decision
+ * rather than a leap. Nothing here is new — these are the same paths `@suite/contracts`
+ * defines and the app itself resolves — and that is the point of showing them.
+ */
+export interface AppLocation {
+    readonly id: string;
+    readonly name: string;
+    readonly version: string;
+    /** The binary Start launches, as the install record names it. */
+    readonly executable: string;
+    /** `~/Documents/Suite/<App>`, where this app's files are. */
+    readonly documents: string;
+    /** The per-user directory for machine-local state. Never beside a document. */
+    readonly data: string;
+}
 export interface StartSettings {
     readonly dataDirectory: string;
     readonly documentsRoot: string;
     readonly installRoots: readonly string[];
+    /** Where each app Start can see keeps its things. Empty before anything is installed. */
+    readonly locations: readonly AppLocation[];
 }
 export interface LauncherState {
     readonly apps: readonly AppCard[];

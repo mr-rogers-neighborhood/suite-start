@@ -16,6 +16,9 @@ contextBridge.exposeInMainWorld("suiteStart", {
   removeApp: (id) => ipcRenderer.invoke("suite:start:remove", id),
   // Deletes what Start installed; the confirmation happens in main, where the paths are.
   uninstallApp: (id) => ipcRenderer.invoke("suite:start:uninstall", id),
+  // Back to the version this hub replaced. It names an app, never a version: main
+  // decides what "previous" means from what is on disk.
+  rollbackApp: (id) => ipcRenderer.invoke("suite:start:rollback", id),
   // An app id, never a path: main resolves it against its own records.
   revealApp: (id) => ipcRenderer.invoke("suite:start:reveal", id),
   // Install or update one app from its signed feed. The bar arrives on its own

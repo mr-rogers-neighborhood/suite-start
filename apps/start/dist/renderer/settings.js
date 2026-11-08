@@ -45,4 +45,22 @@ export function renderSettings(state) {
   for (const root of state.settings.installRoots) rootList.append(el("li", null, root));
   roots.append(rootList);
   list.append(el("dt", null, "Install roots"), roots);
+
+  // Where everything is, per app, so leaving is a decision rather than a leap. A person
+  // who can see the binary, the state and the documents can back them up, move them, or
+  // delete them with a file manager — which is the point of a local-first app.
+  const locations = state.settings.locations;
+  for (const app of locations) {
+    const detail = el("dd");
+    const rows = el("ul");
+    for (const [label, path] of [
+      ["Binary", app.executable],
+      ["Documents", app.documents],
+      ["Data", app.data],
+    ]) {
+      rows.append(el("li", null, `${label}: ${path}`));
+    }
+    detail.append(rows);
+    list.append(el("dt", null, `${app.name} ${app.version}`), detail);
+  }
 }

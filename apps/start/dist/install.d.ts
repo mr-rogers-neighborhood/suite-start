@@ -67,13 +67,35 @@ export declare function manifestText(entry: CatalogueEntry, version: string, fee
 /** The versions of one app that are on disk, newest first. */
 export declare function installedVersions(appsRoot: string, entry: CatalogueEntry): Promise<readonly string[]>;
 /**
- * Remove every version of an app except the one named.
+ * How many replaced versions are kept beside the current one.
+ *
+ * One. Not a version history — a single step back. The point is that a bad update is a
+ * button, not a reinstall: a person who just agreed to 0.2.0 and found it worse can
+ * return to 0.1.0 without a network. Keeping more would make the hub a package manager
+ * with retention policy, which is a much bigger promise than this one.
+ */
+export declare const RETAINED_VERSIONS = 1;
+/**
+ * Remove the versions of an app that are neither current nor recently replaced.
  *
  * Best effort: a version directory that will not delete is not a failed install, so it is
  * reported and the app stays installed. A running copy survives it — on Linux the file a
  * live process holds stays until the process lets go.
+ *
+ * `installedVersions` answers newest first, so the retained ones are the head of the list
+ * and everything after it is stale. That is order-independent on purpose: it works the same
+ * on the way up and on the way back down from a rollback.
  */
-export declare function pruneOtherVersions(appsRoot: string, entry: CatalogueEntry, keep: string): Promise<void>;
+export declare function pruneOtherVersions(appsRoot: string, entry: CatalogueEntry, keep: string, retain?: number): Promise<void>;
+/**
+ * The executable inside one installed version.
+ *
+ * An install record names one path, so a version kept for a rollback needs its own lookup:
+ * the directory holds the artifact and its manifest, and the manifest never names a binary
+ * (§registry). The artifact is whichever regular file is executable and is not the
+ * manifest — which is also how a person would tell them apart in a file manager.
+ */
+export declare function executableInVersion(appsRoot: string, entry: CatalogueEntry, version: string): Promise<string | null>;
 /** The base64 SHA-512 of a file, which is the form `electron-builder` writes. */
 export declare function fingerprintOfFile(path: string): Promise<string>;
 /**

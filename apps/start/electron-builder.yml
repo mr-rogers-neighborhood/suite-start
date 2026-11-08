@@ -21,6 +21,11 @@ directories:
 extraResources:
   - from: build/icon.png
     to: icon.png
+  # Each app's artwork, at the size a menu entry's icon folder claims. Copied into
+  # `resources/icons/<id>.png` so `writeShortcut` can install one per app instead of
+  # putting the hub's own mark under every app's name.
+  - from: build/app-icons
+    to: icons
 
 files:
   - dist/**/*

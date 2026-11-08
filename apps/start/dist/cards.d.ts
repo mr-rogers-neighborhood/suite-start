@@ -28,6 +28,8 @@ export interface CardInput {
     readonly catalogue: readonly CatalogueApp[];
     /** How many version directories each app has on disk, by app id. */
     readonly versions: ReadonlyMap<string, number>;
+    /** The version a rollback would return to, by app id, when one is on disk. */
+    readonly previous?: ReadonlyMap<string, string | null> | undefined;
     /** Which apps Start started and has not seen exit, by app id. */
     readonly running: ReadonlySet<string>;
     /** Where Start installs. An app under it is Start's to manage, whoever asked first. */

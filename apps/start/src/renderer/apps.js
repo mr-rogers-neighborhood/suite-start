@@ -102,6 +102,14 @@ function cardActions(card, actions) {
     return buttons;
   }
 
+  // A version kept from the last update. Offered, never taken automatically — and it
+  // stays available after a rollback, because the version just left becomes the way back.
+  if (card.previousVersion !== null) {
+    buttons.append(
+      button(`Roll back to ${card.previousVersion}`, "quiet", () => actions.rollback(card.id)),
+    );
+  }
+
   // Managed: Start placed these files, so Start is the one that may delete them.
   buttons.append(button("Uninstall", "quiet", () => actions.uninstall(card.id)));
   return buttons;

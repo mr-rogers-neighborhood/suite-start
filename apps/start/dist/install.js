@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 import { createReadStream, createWriteStream } from "node:fs";
-import { access, chmod, mkdir, mkdtemp, readdir, rename, rm, writeFile } from "node:fs/promises";
+import { access, chmod, mkdir, mkdtemp, readdir, rename, rm, stat, writeFile, } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { Readable, Transform } from "node:stream";
 import { pipeline } from "node:stream/promises";
@@ -55,14 +55,28 @@ async function exists(path) {
     }
 }
 /**
- * Remove every version of an app except the one named.
+ * How many replaced versions are kept beside the current one.
+ *
+ * One. Not a version history — a single step back. The point is that a bad update is a
+ * button, not a reinstall: a person who just agreed to 0.2.0 and found it worse can
+ * return to 0.1.0 without a network. Keeping more would make the hub a package manager
+ * with retention policy, which is a much bigger promise than this one.
+ */
+export const RETAINED_VERSIONS = 1;
+/**
+ * Remove the versions of an app that are neither current nor recently replaced.
  *
  * Best effort: a version directory that will not delete is not a failed install, so it is
  * reported and the app stays installed. A running copy survives it — on Linux the file a
  * live process holds stays until the process lets go.
+ *
+ * `installedVersions` answers newest first, so the retained ones are the head of the list
+ * and everything after it is stale. That is order-independent on purpose: it works the same
+ * on the way up and on the way back down from a rollback.
  */
-export async function pruneOtherVersions(appsRoot, entry, keep) {
-    const stale = (await installedVersions(appsRoot, entry)).filter((version) => version !== keep);
+export async function pruneOtherVersions(appsRoot, entry, keep, retain = RETAINED_VERSIONS) {
+    const others = (await installedVersions(appsRoot, entry)).filter((version) => version !== keep);
+    const stale = others.slice(Math.max(0, retain));
     await Promise.all(stale.map(async (version) => {
         try {
             await rm(appDirectory(appsRoot, entry, version), { recursive: true, force: true });
@@ -71,6 +85,33 @@ export async function pruneOtherVersions(appsRoot, entry, keep) {
             console.warn(`[install] could not remove ${entry.name} ${version}`, error);
         }
     }));
+}
+/**
+ * The executable inside one installed version.
+ *
+ * An install record names one path, so a version kept for a rollback needs its own lookup:
+ * the directory holds the artifact and its manifest, and the manifest never names a binary
+ * (§registry). The artifact is whichever regular file is executable and is not the
+ * manifest — which is also how a person would tell them apart in a file manager.
+ */
+export async function executableInVersion(appsRoot, entry, version) {
+    const directory = appDirectory(appsRoot, entry, version);
+    let found;
+    try {
+        found = await readdir(directory, { withFileTypes: true });
+    }
+    catch {
+        return null;
+    }
+    for (const candidate of found) {
+        if (!candidate.isFile() || candidate.name === APP_MANIFEST_FILENAME)
+            continue;
+        const path = join(directory, candidate.name);
+        const info = await stat(path).catch(() => null);
+        if (info !== null && (info.mode & 0o111) !== 0)
+            return path;
+    }
+    return null;
 }
 /** The base64 SHA-512 of a file, which is the form `electron-builder` writes. */
 export async function fingerprintOfFile(path) {

@@ -31,6 +31,8 @@ export interface CardInput {
   readonly catalogue: readonly CatalogueApp[];
   /** How many version directories each app has on disk, by app id. */
   readonly versions: ReadonlyMap<string, number>;
+  /** The version a rollback would return to, by app id, when one is on disk. */
+  readonly previous?: ReadonlyMap<string, string | null> | undefined;
   /** Which apps Start started and has not seen exit, by app id. */
   readonly running: ReadonlySet<string>;
   /** Where Start installs. An app under it is Start's to manage, whoever asked first. */
@@ -83,6 +85,7 @@ export function appCards(input: CardInput): readonly AppCard[] {
     available: null,
     reason: install.reason,
     versions: 0,
+    previousVersion: null,
     running: false,
     releases: null,
     channel: "stable",
@@ -110,6 +113,7 @@ export function appCards(input: CardInput): readonly AppCard[] {
         available: entry.available,
         reason: entry.reason,
         versions: input.versions.get(entry.id) ?? (found === null ? 0 : 1),
+        previousVersion: input.previous?.get(entry.id) ?? null,
         running: input.running.has(entry.id),
         releases: entry.releases ?? null,
         channel: found?.manifest.update?.channel ?? entry.channel,
@@ -136,6 +140,7 @@ export function appCards(input: CardInput): readonly AppCard[] {
       ? "its release feed has not been read yet"
       : null,
     versions: input.versions.get(entry.manifest.id) ?? 1,
+    previousVersion: input.previous?.get(entry.manifest.id) ?? null,
     running: input.running.has(entry.manifest.id),
     releases: null,
     channel: entry.manifest.update?.channel ?? "stable",
@@ -171,6 +176,7 @@ export function selfCard(entry: CatalogueApp, version: string): AppCard {
     available: entry.available,
     reason: entry.reason,
     versions: 1,
+    previousVersion: null,
     running: false,
     releases: entry.releases ?? null,
     channel: entry.channel,

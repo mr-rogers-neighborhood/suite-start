@@ -193,6 +193,9 @@ h3 {
 /* The app's mark sits at the start of its name, the way an icon does in a file list. */
 .card-title:has(.card-mark) {
   justify-content: flex-start;
+  /* Centred, not baseline: an image's baseline is its bottom edge, so baseline
+     alignment leaves a 24px mark floating well above the label it belongs to. */
+  align-items: center;
   gap: 10px;
 }
 

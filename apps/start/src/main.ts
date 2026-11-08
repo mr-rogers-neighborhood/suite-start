@@ -12,6 +12,7 @@ import {
   type SuiteHub,
   suiteApplicationsRoot,
   suiteDocumentsRoot,
+  suitePaths,
 } from "@suite/contracts";
 import {
   desktopCsp,
@@ -20,6 +21,7 @@ import {
   resolveProtocolAsset,
 } from "@suite/desktop";
 import { app, BrowserWindow, dialog, ipcMain, Menu, net, protocol, shell } from "electron";
+import { resolveAppIcon } from "./appIconFile.js";
 import { appCards, fileCards, selfCard } from "./cards.js";
 import {
   CATALOGUE_APPS,
@@ -32,16 +34,23 @@ import {
 import { type DocumentsFolder, indexDocuments, isInsideDocuments } from "./fileIndex.js";
 import { StartHost } from "./host.js";
 import { writeHubReport } from "./hubReport.js";
-import { installApp, installedVersions } from "./install.js";
+import { executableInVersion, installApp, installedVersions } from "./install.js";
 import { type RegistryStore, registryStore } from "./installs.js";
 import { launchVerdict } from "./launchCheck.js";
 import { defaultRoots, nodeRegistryFileSystem } from "./nodeFileSystem.js";
 import { RECENT_LIMIT, type RecentsFile, recentsFile } from "./recents.js";
 import { type RecoveryLookup, readRecoveryReports, recoveryFor } from "./recovery.js";
-import { appById, type DiscoveredApp, discoverApps, type InstallRecord } from "./registry.js";
+import {
+  APP_MANIFEST_FILENAME,
+  appById,
+  type DiscoveredApp,
+  discoverApps,
+  type InstallRecord,
+} from "./registry.js";
 import { type ReportedUpdate, readReportedUpdate, type UpdateLookup } from "./reportedUpdate.js";
 import { describeRouteRejection, routeLaunch } from "./route.js";
 import {
+  type AppLocation,
   type InstallProgress,
   type LauncherState,
   type RecentCard,
@@ -243,6 +252,30 @@ async function versionCounts(): Promise<ReadonlyMap<string, number>> {
   return counts;
 }
 
+/**
+ * The version each app could go back to, by app id.
+ *
+ * Read from the disk rather than remembered: an update keeps exactly one replaced version
+ * (§RETAINED_VERSIONS), and a card should offer the button only when that directory is
+ * really there. The installed version is the one discovery found, so this cannot disagree
+ * with the version the card prints.
+ */
+async function previousVersions(
+  apps: readonly DiscoveredApp[],
+): Promise<ReadonlyMap<string, string | null>> {
+  const root = applicationsRoot();
+  const installed = new Map(apps.map((app) => [app.manifest.id, app.manifest.version]));
+  const previous = new Map<string, string | null>();
+  await Promise.all(
+    CATALOGUE_APPS.map(async (entry) => {
+      const here = installed.get(entry.id);
+      const versions = await installedVersions(root, entry);
+      previous.set(entry.id, versions.find((version) => version !== here) ?? null);
+    }),
+  );
+  return previous;
+}
+
 /** Send the progress list, which is the only thing that changes while a bar moves. */
 function sendProgress(): void {
   window?.webContents.send(START_INSTALL_PROGRESS, [...installProgress.values()]);
@@ -266,6 +299,36 @@ function updateLookup(): UpdateLookup {
     home: app.getPath("home"),
     xdgDataHome: process.env.XDG_DATA_HOME,
   };
+}
+
+/**
+ * Where each app Start can see keeps its binary, its state and its files.
+ *
+ * Read from the same discovery the cards use, so a path here and the path in an install
+ * record cannot disagree. A refused install is left out: it has no version to report, and
+ * its "where" is the sentence its card already shows.
+ */
+function appLocations(apps: readonly DiscoveredApp[]): readonly AppLocation[] {
+  const platform = process.platform;
+  const home = app.getPath("home");
+  const rootOverride = process.env.SUITE_START_DOCUMENTS;
+  // The folder is the convention's name, not the app's: a manifest calls itself
+  // "Suite Canvas", and a folder called that is a folder no app writes to.
+  return apps.flatMap((installed): AppLocation[] => {
+    const entry = SUITE_APPS.find((candidate) => candidate.id === installed.manifest.id);
+    if (entry === undefined) return [];
+    return [
+      {
+        id: entry.id,
+        name: installed.manifest.name,
+        version: installed.manifest.version,
+        executable: installed.executable,
+        documents: appDocumentsFolder(entry, { platform, home, rootOverride }),
+        data: suitePaths(entry.folder, { platform, home, xdgDataHome: process.env.XDG_DATA_HOME })
+          .data,
+      },
+    ];
+  });
 }
 
 function documentFolders(): readonly DocumentsFolder[] {
@@ -402,6 +465,7 @@ async function state(): Promise<LauncherState> {
     updates,
     catalogue,
     versions: await versionCounts(),
+    previous: await previousVersions(apps),
     running: liveRunning(),
     appsRoot: applicationsRoot(),
   });
@@ -430,6 +494,7 @@ async function state(): Promise<LauncherState> {
       dataDirectory,
       documentsRoot: documentsRoot(),
       installRoots: [...new Set([...roots(), applicationsRoot()])],
+      locations: appLocations(apps),
     },
     version: app.getVersion(),
     sync: await syncState(),
@@ -614,16 +679,22 @@ function shortcutDirs(): { entry: (id: string) => string; icon: (name: string) =
  * The entry names the versioned executable, so an update has to rewrite it — which is why
  * it is one file per app rather than one per version. Failure is a warning, never a failed
  * install: a missing menu entry is a smaller problem than an app that will not install.
+ *
+ * The icon is the **app's**, looked up by id (`appIconFile.ts`). It used to be the hub's
+ * own mark copied under every app's name, which is why three apps shared one menu icon.
  */
 async function writeShortcut(entry: CatalogueEntry, executable: string): Promise<void> {
   const dirs = shortcutDirs();
   const iconName = shortcutIconName(entry.id);
   try {
-    const iconSource = windowIcon();
+    const iconSource = appIcon(entry.id);
     if (iconSource !== null) {
       const destination = dirs.icon(iconName);
       await mkdir(dirname(destination), { recursive: true });
       await copyFile(iconSource, destination);
+      await refreshIconCache();
+    } else {
+      console.warn(`[shortcut] no artwork for ${entry.id}; its entry keeps a generic icon`);
     }
     const path = dirs.entry(entry.id);
     await mkdir(dirname(path), { recursive: true });
@@ -645,6 +716,27 @@ async function writeShortcut(entry: CatalogueEntry, executable: string): Promise
   } catch (error) {
     console.warn(`[shortcut] could not write the entry for ${entry.id}`, error);
   }
+}
+
+/**
+ * Tell GTK the hicolor theme changed, and wait for it.
+ *
+ * `gtk-update-icon-cache` is what makes a freshly written PNG resolvable by *name* on
+ * desktops that read the cache. Without it the entry can keep drawing the icon it cached
+ * for that name, which for a replaced app is the old artwork.
+ *
+ * Awaited rather than fire-and-forget, unlike `update-desktop-database` below: this tool
+ * writes into the same tree the PNG was just placed in, so a cache built before the file
+ * lands is a stale cache. It resolves on `error` too, so a machine without the tool costs
+ * one failed spawn and nothing else.
+ */
+function refreshIconCache(): Promise<void> {
+  const themeDir = join(app.getPath("home"), ".local", "share", "icons", "hicolor");
+  return new Promise((done) => {
+    const refresh = spawn("gtk-update-icon-cache", ["-f", "-t", themeDir], { stdio: "ignore" });
+    refresh.on("error", () => done());
+    refresh.on("close", () => done());
+  });
 }
 
 /** Remove an app's entry and icon. Best effort, for the same reason as writing them. */
@@ -861,6 +953,17 @@ function windowIcon(): string | null {
   return icon?.path ?? null;
 }
 
+/** One app's own artwork, for its menu entry. Never the hub's mark (§appIconFile). */
+function appIcon(id: string): string | null {
+  return resolveAppIcon({
+    id,
+    isPackaged: app.isPackaged,
+    resourcesPath: process.resourcesPath,
+    appPath: appDir(),
+    exists: (path) => existsSync(path),
+  });
+}
+
 function createWindow(): BrowserWindow {
   const icon = windowIcon();
   const created = new BrowserWindow({
@@ -1002,6 +1105,56 @@ function registerIpc(): void {
     await removeShortcut(id);
     await registry.remove(id);
     await broadcast();
+  });
+
+  /**
+   * Roll back: point the install at the version it replaced.
+   *
+   * Deliberately dumb. It writes no new record shape, downloads nothing, and takes no view
+   * on which version is good — it moves the one path in `installs.json` to a directory this
+   * hub is already holding. The card offers it only because that directory is on disk.
+   *
+   * The replaced version is kept after a rollback too, so going back is not a one-way door:
+   * the version just left becomes the one to return to, and `pruneOtherVersions` reads the
+   * disk rather than a history, so it does not care which direction the walk went.
+   */
+  onIpc(START_IPC.rollbackApp, async (_event, id: unknown) => {
+    if (typeof id !== "string") return;
+    const entry = CATALOGUE_APPS.find((candidate) => candidate.id === id);
+    if (entry === undefined) return;
+
+    const { apps } = await discover();
+    const current = appById(apps, id);
+    const versions = await installedVersions(applicationsRoot(), entry);
+    const target = versions.find((version) => version !== current?.manifest.version);
+    if (target === undefined) return;
+
+    const executable = await executableInVersion(applicationsRoot(), entry, target);
+    if (executable === null) {
+      console.warn(`[rollback] no executable in ${entry.name} ${target}`);
+      await broadcast();
+      return;
+    }
+
+    // A running copy is the version being replaced; it goes the same way an update sends it.
+    if (runningPids.has(id)) {
+      stopApp(id);
+      await waitForExit(id);
+      runningPids.delete(id);
+    }
+
+    await registry.add({
+      id,
+      executable,
+      manifestPath: join(dirname(executable), APP_MANIFEST_FILENAME),
+      installedAt: new Date().toISOString(),
+    });
+    catalogue = withInstalled(catalogue, id, target);
+    await writeShortcut(entry, executable);
+    await broadcast();
+
+    // Same courtesy an update pays: finish where it started.
+    spawnExecutable(executable, [], id);
   });
 
   onIpc(START_IPC.recents, async () => (await state()).recents);
