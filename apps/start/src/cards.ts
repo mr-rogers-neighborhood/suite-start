@@ -33,6 +33,22 @@ export interface CardInput {
   readonly versions: ReadonlyMap<string, number>;
   /** Which apps Start started and has not seen exit, by app id. */
   readonly running: ReadonlySet<string>;
+  /** Where Start installs. An app under it is Start's to manage, whoever asked first. */
+  readonly appsRoot: string;
+}
+
+/**
+ * Whether an executable is one Start placed.
+ *
+ * The path is the proof: only installs land under the applications root, so an app there was
+ * put there by Start and Start replaces it. Reading that from the disk rather than from the
+ * catalogue matters in the moment before the feeds answer — a card that said "from a folder,
+ * updates itself" about an app Start installed would be telling a person the opposite of the
+ * truth, and inviting them to do the thing that breaks it.
+ */
+function isManaged(executable: string, appsRoot: string): boolean {
+  const root = appsRoot.endsWith("/") ? appsRoot : `${appsRoot}/`;
+  return executable.startsWith(root);
 }
 
 /** The folder name a refused install is known by. */
@@ -106,16 +122,19 @@ export function appCards(input: CardInput): readonly AppCard[] {
       };
     });
 
-  // Whatever discovery found that the catalogue does not name: an app this person built
-  // or installed themselves. D44 makes it first-class, so it keeps its card.
+  // Discovery found an app the catalogue does not name — either a copy this person placed
+  // (D44 makes it first-class) or a managed install whose feed has not answered yet. Only
+  // the first is "from a folder"; the second is Start's, and says so.
   const local: AppCard[] = [...byId.values()].map((entry) => ({
     id: entry.manifest.id,
     name: entry.manifest.name,
     icon: APP_ICONS[entry.manifest.id] ?? null,
-    state: "local",
+    state: isManaged(entry.executable, input.appsRoot) ? "no-release" : "local",
     version: entry.manifest.version,
     available: null,
-    reason: null,
+    reason: isManaged(entry.executable, input.appsRoot)
+      ? "its release feed has not been read yet"
+      : null,
     versions: input.versions.get(entry.manifest.id) ?? 1,
     running: input.running.has(entry.manifest.id),
     releases: null,

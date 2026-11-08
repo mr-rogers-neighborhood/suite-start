@@ -2,6 +2,19 @@ import { workspaceLink } from "@suite/contracts";
 import { APP_ICONS } from "./appIcons.js";
 import { isNewer, SELF_ID } from "./catalogue.js";
 import { UNREPORTED } from "./reportedUpdate.js";
+/**
+ * Whether an executable is one Start placed.
+ *
+ * The path is the proof: only installs land under the applications root, so an app there was
+ * put there by Start and Start replaces it. Reading that from the disk rather than from the
+ * catalogue matters in the moment before the feeds answer — a card that said "from a folder,
+ * updates itself" about an app Start installed would be telling a person the opposite of the
+ * truth, and inviting them to do the thing that breaks it.
+ */
+function isManaged(executable, appsRoot) {
+    const root = appsRoot.endsWith("/") ? appsRoot : `${appsRoot}/`;
+    return executable.startsWith(root);
+}
 /** The folder name a refused install is known by. */
 function nameFor(path) {
     const segments = path.split(/[\\/]+/u).filter((segment) => segment.length > 0);
@@ -71,16 +84,19 @@ export function appCards(input) {
             health: { ok: true },
         };
     });
-    // Whatever discovery found that the catalogue does not name: an app this person built
-    // or installed themselves. D44 makes it first-class, so it keeps its card.
+    // Discovery found an app the catalogue does not name — either a copy this person placed
+    // (D44 makes it first-class) or a managed install whose feed has not answered yet. Only
+    // the first is "from a folder"; the second is Start's, and says so.
     const local = [...byId.values()].map((entry) => ({
         id: entry.manifest.id,
         name: entry.manifest.name,
         icon: APP_ICONS[entry.manifest.id] ?? null,
-        state: "local",
+        state: isManaged(entry.executable, input.appsRoot) ? "no-release" : "local",
         version: entry.manifest.version,
         available: null,
-        reason: null,
+        reason: isManaged(entry.executable, input.appsRoot)
+            ? "its release feed has not been read yet"
+            : null,
         versions: input.versions.get(entry.manifest.id) ?? 1,
         running: input.running.has(entry.manifest.id),
         releases: null,

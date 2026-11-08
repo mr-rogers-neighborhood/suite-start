@@ -69,6 +69,7 @@ const UNREPORTED: ReportedUpdate = {
 const NO_UPDATES: ReadonlyMap<string, ReportedUpdate> = new Map();
 const NO_VERSIONS: ReadonlyMap<string, number> = new Map();
 const NO_RUNNING: ReadonlySet<string> = new Set();
+const APPS_ROOT = "/home/me/Applications/Suite";
 
 describe("appCards", () => {
   it("offers a card for an app that is not on this machine at all", () => {
@@ -82,6 +83,7 @@ describe("appCards", () => {
       catalogue: [offered({ available: "0.2.0" })],
       versions: NO_VERSIONS,
       running: NO_RUNNING,
+      appsRoot: APPS_ROOT,
     });
     expect(card).toMatchObject({
       id: "canvas",
@@ -103,6 +105,7 @@ describe("appCards", () => {
       catalogue: [offered({ reason: "the manifest is not signed by the publisher" })],
       versions: NO_VERSIONS,
       running: NO_RUNNING,
+      appsRoot: APPS_ROOT,
     });
     expect(card?.state).toBe("no-release");
     expect(card?.available).toBeNull();
@@ -119,6 +122,7 @@ describe("appCards", () => {
       catalogue: [offered({ available: "0.2.0", installed: "0.1.0", newer: true })],
       versions: new Map([["canvas", 2]]),
       running: NO_RUNNING,
+      appsRoot: APPS_ROOT,
     });
     expect(card).toMatchObject({
       state: "update-available",
@@ -139,6 +143,7 @@ describe("appCards", () => {
       catalogue: [offered({ available: "0.1.0", installed: "0.1.0" })],
       versions: NO_VERSIONS,
       running: NO_RUNNING,
+      appsRoot: APPS_ROOT,
     });
     expect(card).toMatchObject({ state: "current", version: "0.1.0", available: "0.1.0" });
   });
@@ -154,6 +159,7 @@ describe("appCards", () => {
       catalogue: [],
       versions: NO_VERSIONS,
       running: NO_RUNNING,
+      appsRoot: APPS_ROOT,
     });
     expect(card).toMatchObject({
       id: "scratch",
@@ -174,6 +180,7 @@ describe("appCards", () => {
       catalogue: [offered({ installed: "0.1.0", available: "0.1.0" })],
       versions: NO_VERSIONS,
       running: NO_RUNNING,
+      appsRoot: APPS_ROOT,
     });
     expect(card?.fileCount).toBe(2);
     expect(card?.health).toEqual({ ok: true });
@@ -200,6 +207,7 @@ describe("appCards", () => {
       catalogue: [offered({ installed: "0.1.0", available: "0.1.0" })],
       versions: NO_VERSIONS,
       running: NO_RUNNING,
+      appsRoot: APPS_ROOT,
     });
     expect(card).toMatchObject({ channel: "beta", update: { state: "available" } });
   });
@@ -214,6 +222,7 @@ describe("appCards", () => {
       catalogue: [offered({ installed: "0.1.0" })],
       versions: NO_VERSIONS,
       running: NO_RUNNING,
+      appsRoot: APPS_ROOT,
     });
     expect(card?.update).toEqual(UNREPORTED);
   });
@@ -228,6 +237,7 @@ describe("appCards", () => {
       catalogue: [offered({ installed: "0.1.0" })],
       versions: NO_VERSIONS,
       running: NO_RUNNING,
+      appsRoot: APPS_ROOT,
     });
     expect(card?.lastOpenedAt).toBe(1_700_000_000_000);
   });
@@ -245,6 +255,7 @@ describe("appCards", () => {
       catalogue: [offered({ installed: "0.1.0" })],
       versions: NO_VERSIONS,
       running: NO_RUNNING,
+      appsRoot: APPS_ROOT,
     });
 
     expect(cards).toHaveLength(3);
@@ -272,6 +283,7 @@ describe("appCards", () => {
       ],
       versions: NO_VERSIONS,
       running: NO_RUNNING,
+      appsRoot: APPS_ROOT,
     });
     expect(attentionCount(cards)).toBe(1);
     expect(attentionCount([])).toBe(0);
@@ -325,5 +337,41 @@ describe("fileCards", () => {
   it("leaves a row without a link when its name would not survive one", () => {
     const rows = fileCards([indexed({ name: "a/b.canvas" })]);
     expect(rows[0]?.link).toBeNull();
+  });
+});
+
+describe("a managed install whose feed has not answered", () => {
+  it("is not described as a copy Start did not place", () => {
+    // The moment before the feeds answer is the moment a person is most likely to read the
+    // card. Saying "from a folder, updates itself" about an app in Start's own root would be
+    // the opposite of the truth, and would invite the double-updater it exists to prevent.
+    const [card] = appCards({
+      apps: [{ ...discovered(), executable: `${APPS_ROOT}/Canvas/0.1.1/suite-canvas.AppImage` }],
+      rejected: [],
+      files: [],
+      recents: [],
+      updates: NO_UPDATES,
+      catalogue: [],
+      versions: NO_VERSIONS,
+      running: NO_RUNNING,
+      appsRoot: APPS_ROOT,
+    });
+    expect(card?.state).toBe("no-release");
+    expect(card?.reason).toBe("its release feed has not been read yet");
+  });
+
+  it("still calls a copy outside that root a folder copy", () => {
+    const [card] = appCards({
+      apps: [{ ...discovered(), executable: "/home/me/Downloads/elsewhere.AppImage" }],
+      rejected: [],
+      files: [],
+      recents: [],
+      updates: NO_UPDATES,
+      catalogue: [],
+      versions: NO_VERSIONS,
+      running: NO_RUNNING,
+      appsRoot: APPS_ROOT,
+    });
+    expect(card?.state).toBe("local");
   });
 });

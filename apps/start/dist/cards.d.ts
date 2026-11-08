@@ -30,6 +30,8 @@ export interface CardInput {
     readonly versions: ReadonlyMap<string, number>;
     /** Which apps Start started and has not seen exit, by app id. */
     readonly running: ReadonlySet<string>;
+    /** Where Start installs. An app under it is Start's to manage, whoever asked first. */
+    readonly appsRoot: string;
 }
 export declare function appCards(input: CardInput): readonly AppCard[];
 /**

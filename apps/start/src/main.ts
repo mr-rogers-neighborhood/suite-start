@@ -403,6 +403,7 @@ async function state(): Promise<LauncherState> {
     catalogue,
     versions: await versionCounts(),
     running: liveRunning(),
+    appsRoot: applicationsRoot(),
   });
 
   const recentCards: RecentCard[] = recent

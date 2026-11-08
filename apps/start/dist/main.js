@@ -320,6 +320,7 @@ async function state() {
         catalogue,
         versions: await versionCounts(),
         running: liveRunning(),
+        appsRoot: applicationsRoot(),
     });
     const recentCards = recent
         .flatMap((row) => {
