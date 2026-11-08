@@ -45,12 +45,47 @@ export const START_INSTALL_PROGRESS = "suite:start:install-progress";
 export type StartChannel = (typeof START_IPC)[keyof typeof START_IPC];
 
 /**
- * Which palette the window draws.
+ * Which mode the window draws.
  *
  * Declared here rather than in `theme.ts` because the page imports this module and that one
  * reads the filesystem. `theme.ts` owns the rules; this owns the vocabulary.
+ *
+ * `system` is a *choice*, not a mode: by the time a value reaches the page it has been
+ * resolved against the desktop, so a stylesheet never sees it.
  */
 export type ThemeSource = "system" | "light" | "dark";
+
+/** What a person chose: a preset, and how bright to draw it. */
+export interface ThemeChoice {
+  /** The preset's id, from `@suite/theme`. */
+  readonly preset: string;
+  readonly mode: ThemeSource;
+}
+
+/** One entry in the picker. The colours are not here: `themeValues` carries the chosen one. */
+export interface ThemeOption {
+  readonly id: string;
+  readonly name: string;
+  readonly description: string | null;
+}
+
+/**
+ * The chosen theme, already resolved.
+ *
+ * The page cannot import `@suite/theme` — it is plain ES modules served over `start://` with
+ * no bundler — so main does the resolving and sends the answer. That keeps the renderer
+ * dependency-free and puts the one place that knows how a preset becomes CSS in the process
+ * that already imports the package.
+ */
+export interface ResolvedTheme {
+  readonly choice: ThemeChoice;
+  /** The preset list, for the picker. */
+  readonly options: readonly ThemeOption[];
+  /** The resolved mode, never `system`. */
+  readonly mode: "light" | "dark";
+  /** Every role as a custom property, ready for `style.setProperty`. */
+  readonly values: Readonly<Record<string, string>>;
+}
 
 /** Whether an install can be launched, and why not when it cannot. */
 export type AppHealth = { readonly ok: true } | { readonly ok: false; readonly reason: string };
@@ -181,8 +216,8 @@ export interface StartSettings {
   readonly installRoots: readonly string[];
   /** Where each app Start can see keeps its things. Empty before anything is installed. */
   readonly locations: readonly AppLocation[];
-  /** Which palette the window draws. `system` follows the desktop. */
-  readonly theme: ThemeSource;
+  /** Which palette the window draws, and how bright. */
+  readonly theme: ResolvedTheme;
 }
 
 export interface LauncherState {

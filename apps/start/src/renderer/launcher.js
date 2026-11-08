@@ -54,8 +54,8 @@ const actions = {
    * The next state arrives carrying the answer, so the select keeps whatever was chosen
    * rather than snapping back to a value the page guessed.
    */
-  async setTheme(source) {
-    await bridge.setTheme(source);
+  async setTheme(preset, mode) {
+    await bridge.setTheme({ preset, mode });
     await refresh();
   },
   async reveal(id) {
@@ -113,6 +113,22 @@ function visibleApps(state) {
   };
 }
 
+/**
+ * Paint a resolved theme onto the document.
+ *
+ * Every role is a custom property, so this is the whole integration: the stylesheet says
+ * `var(--ink)` and never asks which preset is on. `data-theme` and `data-theme-mode` are set
+ * too, because a preset with a different feel may want a different shadow or border
+ * treatment, and that is a rule rather than a colour.
+ */
+function applyTheme(theme) {
+  const root = document.documentElement;
+  for (const [name, value] of Object.entries(theme.values)) root.style.setProperty(name, value);
+  root.dataset.theme = theme.choice.preset;
+  root.dataset.themeMode = theme.mode;
+  root.style.colorScheme = theme.mode;
+}
+
 function render(state) {
   lastState = state;
   renderApps(visibleApps(state), actions);
@@ -121,11 +137,10 @@ function render(state) {
   renderSync(state, actions);
   document.getElementById("version").textContent = `Suite ${state.version}`;
 
-  // The chosen palette, or none at all so the stylesheet's media query answers. Set from
+  // The theme, already resolved by main: this page has no bundler and cannot import
+  // `@suite/theme`, so the variables arrive as data and are painted onto the root. Set from
   // state rather than from the control, so a choice made in one window is right in the next.
-  const chosen = state.settings.theme;
-  if (chosen === "system") delete document.documentElement.dataset.theme;
-  else document.documentElement.dataset.theme = chosen;
+  applyTheme(state.settings.theme);
 
   // The rail carries the one number worth acting on, and hides it at zero so a
   // healthy hub is quiet.

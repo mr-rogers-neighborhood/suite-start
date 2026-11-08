@@ -41,6 +41,7 @@ replace a file it is allowed to write. Everything below describes the code rathe
   hosted web app, control plane and relay are retired, not moved.
 
 What changed, in a person's words rather than commits: [CHANGELOG.md](CHANGELOG.md).
+Where accessibility stands, and what is checked by hand: [ACCESSIBILITY.md](ACCESSIBILITY.md).
 
 ## Two rules
 

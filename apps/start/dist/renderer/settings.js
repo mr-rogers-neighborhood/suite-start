@@ -29,26 +29,48 @@ export function renderSettings(state, actions) {
   );
   pair("Version", state.version);
 
-  // The window follows the desktop until somebody says otherwise. A select rather than a
-  // switch because the third answer — "follow the desktop" — is the one most people want
-  // and the one a two-state control cannot express.
-  const themeRow = el("dd");
-  const theme = el("select");
-  theme.id = "theme";
-  theme.setAttribute("aria-label", "Appearance");
+  // Two choices, not one: a preset is a palette family and a mode is how bright to draw it.
+  // "Solarized at night" is Solarized with dark values, so a single list of six entries would
+  // be the same information with half of it hidden in the labels.
+  const theme = state.settings.theme;
+  const presetRow = el("dd");
+  const preset = el("select");
+  preset.id = "theme-preset";
+  preset.setAttribute("aria-label", "Theme");
+  for (const option of theme.options) {
+    const node = el("option", null, option.name);
+    node.value = option.id;
+    if (theme.choice.preset === option.id) node.selected = true;
+    preset.append(node);
+  }
+  preset.addEventListener("change", () => actions?.setTheme?.(preset.value, theme.choice.mode));
+  presetRow.append(preset);
+  // What the chosen preset is, in the words the preset itself uses.
+  const description = theme.options.find(
+    (option) => option.id === theme.choice.preset,
+  )?.description;
+  if (description !== null && description !== undefined) {
+    presetRow.append(el("p", "pane-note", description));
+  }
+  list.append(el("dt", null, "Theme"), presetRow);
+
+  const modeRow = el("dd");
+  const mode = el("select");
+  mode.id = "theme-mode";
+  mode.setAttribute("aria-label", "Brightness");
   for (const [value, label] of [
     ["system", "Follow the desktop"],
     ["light", "Light"],
     ["dark", "Dark"],
   ]) {
-    const option = el("option", null, label);
-    option.value = value;
-    if (state.settings.theme === value) option.selected = true;
-    theme.append(option);
+    const node = el("option", null, label);
+    node.value = value;
+    if (theme.choice.mode === value) node.selected = true;
+    mode.append(node);
   }
-  theme.addEventListener("change", () => actions?.setTheme?.(theme.value));
-  themeRow.append(theme);
-  list.append(el("dt", null, "Appearance"), themeRow);
+  mode.addEventListener("change", () => actions?.setTheme?.(theme.choice.preset, mode.value));
+  modeRow.append(mode);
+  list.append(el("dt", null, "Brightness"), modeRow);
 
   // The one ask in the product: a URL, no account, nothing gated. The window
   // handler opens `https` in the system browser, so this is a plain link and not

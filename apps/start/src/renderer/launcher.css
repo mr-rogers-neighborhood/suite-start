@@ -1,3 +1,14 @@
+/*
+ * No colours here.
+ *
+ * Every role below is set by `@suite/theme` at runtime, from the preset and mode a person
+ * chose, so this file describes *layout and shape* and never a palette. What it does keep is
+ * a fallback: if the theme never arrives — a renderer that failed before its first paint —
+ * the page still has ink and a surface rather than white-on-white.
+ *
+ * `--rail` is the one local role: it is the left column, which no other app has, so it is
+ * derived from the theme's own surface rather than added to the shared vocabulary.
+ */
 :root {
   color-scheme: light dark;
   --surface: #ffffff;
@@ -6,53 +17,10 @@
   --ink: #16161a;
   --ink-muted: #5c5c66;
   --hairline: #e3e3e6;
+  --border-strong: #828282;
   --accent: #1f6feb;
   --danger: #b42318;
   font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-}
-
-/* The desktop's answer, until a person overrides it in Settings. */
-@media (prefers-color-scheme: dark) {
-  :root {
-    --surface: #16161a;
-    --surface-sunk: #1d1d22;
-    --rail: #1a1a1f;
-    --ink: #f2f2f4;
-    --ink-muted: #a0a0ab;
-    --hairline: #2b2b33;
-    --accent: #6ea8fe;
-    --danger: #f19a92;
-  }
-}
-
-/*
- * A chosen palette, which has to beat the media query and therefore repeats it.
- *
- * `nativeTheme.themeSource` sets the window frame and the scrollbars, but it does not reach
- * this page's `prefers-color-scheme` — so the choice is applied here as an attribute the
- * renderer sets from the state it was given. Two declarations of the same eight colours is
- * the price of the two being able to disagree with the desktop on purpose.
- */
-:root[data-theme="light"] {
-  --surface: #ffffff;
-  --surface-sunk: #f6f6f7;
-  --rail: #f2f2f4;
-  --ink: #16161a;
-  --ink-muted: #5c5c66;
-  --hairline: #e3e3e6;
-  --accent: #1f6feb;
-  --danger: #b42318;
-}
-
-:root[data-theme="dark"] {
-  --surface: #16161a;
-  --surface-sunk: #1d1d22;
-  --rail: #1a1a1f;
-  --ink: #f2f2f4;
-  --ink-muted: #a0a0ab;
-  --hairline: #2b2b33;
-  --accent: #6ea8fe;
-  --danger: #f19a92;
 }
 
 * {
@@ -298,7 +266,9 @@ h3 {
   font-size: 13px;
   padding: 6px 10px;
   min-width: 200px;
-  border: 1px solid var(--hairline);
+  /* Not `--hairline`: an empty text field's border is the only thing that says "you can
+     type here", so it is a component boundary and SC 1.4.11 asks 3:1 for it. */
+  border: 1px solid var(--border-strong);
   border-radius: 8px;
   background: var(--surface);
   color: var(--ink);
@@ -531,7 +501,9 @@ h3 {
 }
 
 :focus-visible {
-  outline: 2px solid var(--accent);
+  /* `--focus`, not `--accent`: a theme may want a legible ring that is not its brand colour,
+     and the contrast test holds this role to 3:1 against every surface. */
+  outline: 2px solid var(--focus);
   outline-offset: 2px;
   border-radius: 6px;
 }

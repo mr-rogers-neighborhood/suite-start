@@ -21,6 +21,7 @@ import {
   isTrustedSender,
   resolveProtocolAsset,
 } from "@suite/desktop";
+import { cssVariables, defaultTheme, presetById } from "@suite/theme";
 import {
   app,
   BrowserWindow,
@@ -70,11 +71,12 @@ import {
   type InstallProgress,
   type LauncherState,
   type RecentCard,
+  type ResolvedTheme,
   START_CHANGED,
   START_INSTALL_PROGRESS,
   START_IPC,
   type SyncState,
-  type ThemeSource,
+  type ThemeChoice,
 } from "./shared.js";
 import {
   isIconOf,
@@ -83,7 +85,13 @@ import {
   shortcutPath,
   shortcutText,
 } from "./shortcuts.js";
-import { DEFAULT_THEME, isThemeSource, loadTheme, saveTheme } from "./theme.js";
+import {
+  isThemeChoice,
+  loadThemeChoice,
+  presetFor,
+  saveThemeChoice,
+  themeOptions,
+} from "./theme.js";
 import { checkForUpdates } from "./updateCheck.js";
 import { resolveWindowIcon } from "./windowIcon.js";
 
@@ -140,13 +148,37 @@ let registry: RegistryStore;
 let recents: RecentsFile;
 let dataDirectory = "";
 /**
- * Which palette the window draws.
+ * Which preset and mode the window draws.
  *
- * Held in memory and handed to `nativeTheme`, so the page, the title bar and the scrollbars
- * all answer one source. The stylesheet keeps both palettes and neither needs a second
- * switch: Electron changes what `prefers-color-scheme` reports.
+ * Held in memory and resolved on every read, because "follow the desktop" is a choice whose
+ * answer changes while the hub is open — a laptop that dims at dusk should repaint without
+ * anyone touching the picker.
  */
-let theme: ThemeSource = DEFAULT_THEME;
+let themeChoice: ThemeChoice = { preset: presetFor(null), mode: "system" };
+
+/** What the desktop currently says, which `system` resolves against. */
+function desktopPrefersDark(): boolean {
+  return nativeTheme.shouldUseDarkColors;
+}
+
+/**
+ * The choice, resolved: the preset, the list for the picker, and every role as a variable.
+ *
+ * Resolved in main because the page cannot import `@suite/theme` — it is plain ES modules
+ * over `start://` with no bundler — and because one process deciding is what keeps the
+ * title bar, the scrollbars and the content from disagreeing.
+ */
+function resolvedTheme(): ResolvedTheme {
+  const preset = presetById(themeChoice.preset) ?? defaultTheme();
+  const mode =
+    themeChoice.mode === "system" ? (desktopPrefersDark() ? "dark" : "light") : themeChoice.mode;
+  return {
+    choice: themeChoice,
+    options: themeOptions(),
+    mode,
+    values: cssVariables(preset, mode),
+  };
+}
 let syncHost: StartHost | null = null;
 /** The report already on disk, so a restart is visible as a new `startedAt` rather than a new one. */
 let previousHub: SuiteHub | null = null;
@@ -527,7 +559,7 @@ async function state(): Promise<LauncherState> {
       documentsRoot: documentsRoot(),
       installRoots: [...new Set([...roots(), applicationsRoot()])],
       locations: appLocations(apps),
-      theme,
+      theme: resolvedTheme(),
     },
     version: app.getVersion(),
     sync: await syncState(),
@@ -1263,12 +1295,16 @@ function registerIpc(): void {
    * what every window reports for `prefers-color-scheme`, so the stylesheet keeps one set of
    * rules and the title bar cannot disagree with the content.
    */
-  onIpc(START_IPC.setTheme, async (_event, source: unknown) => {
-    if (!isThemeSource(source) || source === theme) return;
-    theme = source;
-    nativeTheme.themeSource = source;
+  onIpc(START_IPC.setTheme, async (_event, choice: unknown) => {
+    if (!isThemeChoice(choice)) return;
+    const next: ThemeChoice = { preset: presetFor(choice.preset), mode: choice.mode };
+    if (next.preset === themeChoice.preset && next.mode === themeChoice.mode) return;
+    themeChoice = next;
+    // Electron owns the window frame and the scrollbars, so it is told as well; the page gets
+    // the values through state, because it cannot read the package.
+    nativeTheme.themeSource = next.mode;
     try {
-      await saveTheme(dataDirectory, source);
+      await saveThemeChoice(dataDirectory, next);
     } catch (error) {
       console.warn("[theme] could not save the choice", error);
     }
@@ -1391,8 +1427,8 @@ if (!gotLock) {
 
   void app.whenReady().then(async () => {
     dataDirectory = process.env.SUITE_START_DATA?.trim() || join(app.getPath("userData"));
-    theme = await loadTheme(dataDirectory);
-    nativeTheme.themeSource = theme;
+    themeChoice = await loadThemeChoice(dataDirectory);
+    nativeTheme.themeSource = themeChoice.mode;
     registry = registryStore(dataDirectory);
     recents = recentsFile(dataDirectory);
     app.setAppUserModelId("run.suite.start");

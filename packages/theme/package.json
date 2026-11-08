@@ -1,0 +1,45 @@
+{
+  "name": "@suite/theme",
+  "version": "0.1.0",
+  "description": "The suite's shared palette: role names, WCAG-measured contrast, theme presets and the one function that paints them. Pure data and pure functions; no React, no Electron, no I/O.",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "development": "./src/index.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./presets": {
+      "types": "./dist/presets/index.d.ts",
+      "development": "./src/presets/index.ts",
+      "import": "./dist/presets/index.js",
+      "default": "./dist/presets/index.js"
+    },
+    "./contrast": {
+      "types": "./dist/contrast.d.ts",
+      "development": "./src/contrast.ts",
+      "import": "./dist/contrast.js",
+      "default": "./dist/contrast.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc --noEmit -p tsconfig.json"
+  },
+  "devDependencies": {
+    "typescript": "~5.9.3",
+    "vitest": "^5.0.5"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mr-rogers-neighborhood/suite-start.git",
+    "directory": "packages/theme"
+  },
+  "license": "MIT"
+}

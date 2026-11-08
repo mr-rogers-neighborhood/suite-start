@@ -38,6 +38,13 @@ export default defineConfig({
       },
       {
         test: {
+          name: "theme",
+          environment: "node",
+          include: ["packages/theme/src/**/*.test.ts"],
+        },
+      },
+      {
+        test: {
           name: "start",
           environment: "node",
           include: ["apps/start/src/**/*.test.ts"],

@@ -1,0 +1,82 @@
+/**
+ * Suite — the palette the apps ship today.
+ *
+ * Taken from Canvas's tokens rather than invented, because Canvas is the app whose look the
+ * others are being brought to. Every value here is one already on screen: the surfaces are
+ * the light greys and the near-black, the ink is the near-black and near-white, and the six
+ * hues are the ones a section or a card can already wear.
+ *
+ * This is the default, so a reader who never opens the theme picker sees no change at all.
+ */
+export const suite = {
+    format: "suite.theme",
+    contractVersion: 1,
+    id: "suite",
+    name: "Suite",
+    description: "The look the apps ship with.",
+    light: {
+        canvas: "#f5f5f7",
+        surface: "#ffffff",
+        "surface-sunk": "#f6f6f7",
+        "surface-strong": "#ffffff",
+        accent: "#1f6feb",
+        "accent-strong": "#0069d9",
+        danger: "#b42318",
+        success: "#0c7a41",
+        warning: "#965a00",
+        ink: "#16161a",
+        "ink-muted": "#5c5c66",
+        "ink-faint": "#8a8a93",
+        hairline: "#e3e3e6",
+        "border-strong": "#878787",
+        focus: "#1f6feb",
+        "on-accent": "#ffffff",
+        "on-danger": "#ffffff",
+        "on-success": "#ffffff",
+        "on-warning": "#ffffff",
+        "hue-slate": "#64748b",
+        "hue-blue": "#3b82f6",
+        "hue-green": "#047857",
+        "hue-amber": "#b45309",
+        "hue-rose": "#be123c",
+        "hue-violet": "#8b5cf6",
+        "chart-1": "#2563eb",
+        "chart-2": "#0c7a41",
+        "chart-3": "#965a00",
+        "chart-4": "#7c3aed",
+        "chart-5": "#be123c",
+    },
+    dark: {
+        canvas: "#16161a",
+        surface: "#1d1d22",
+        "surface-sunk": "#1d1d22",
+        "surface-strong": "#232326",
+        accent: "#6ea8fe",
+        "accent-strong": "#93c0ff",
+        danger: "#f19a92",
+        success: "#5fd39b",
+        warning: "#e8b465",
+        ink: "#f2f2f4",
+        "ink-muted": "#a0a0ab",
+        "ink-faint": "#74747f",
+        hairline: "#2b2b33",
+        "border-strong": "#6d6d6d",
+        focus: "#6ea8fe",
+        "on-accent": "#16161a",
+        "on-danger": "#16161a",
+        "on-success": "#16161a",
+        "on-warning": "#16161a",
+        "hue-slate": "#94a3b8",
+        "hue-blue": "#60a5fa",
+        "hue-green": "#34d399",
+        "hue-amber": "#fbbf24",
+        "hue-rose": "#fb7185",
+        "hue-violet": "#a78bfa",
+        "chart-1": "#60a5fa",
+        "chart-2": "#34d399",
+        "chart-3": "#fbbf24",
+        "chart-4": "#a78bfa",
+        "chart-5": "#fb7185",
+    },
+};
+//# sourceMappingURL=suite.js.map

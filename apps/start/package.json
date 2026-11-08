@@ -18,9 +18,10 @@
   "dependencies": {
     "@suite/contracts": "workspace:*",
     "@suite/desktop": "workspace:*",
-    "electron-updater": "^6.6.2",
+    "@suite/host": "git+https://github.com/mr-rogers-neighborhood/suite-sync.git#v0.11.3&path:/packages/host",
     "@suite/sync": "git+https://github.com/mr-rogers-neighborhood/suite-sync.git#v0.11.3&path:/packages/protocol",
-    "@suite/host": "git+https://github.com/mr-rogers-neighborhood/suite-sync.git#v0.11.3&path:/packages/host"
+    "@suite/theme": "workspace:*",
+    "electron-updater": "^6.6.2"
   },
   "devDependencies": {
     "@types/node": "^26.6.5",

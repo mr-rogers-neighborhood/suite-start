@@ -196,6 +196,9 @@ importers:
       '@suite/sync':
         specifier: git+https://github.com/mr-rogers-neighborhood/suite-sync.git#v0.11.3&path:/packages/protocol
         version: https://codeload.github.com/mr-rogers-neighborhood/suite-sync/tar.gz/e7a9edcf8a88aa804471465dfeebb4aff317d2f6#path:/packages/protocol
+      '@suite/theme':
+        specifier: workspace:*
+        version: link:../../packages/theme
       electron-updater:
         specifier: ^6.6.2
         version: 6.8.11(supports-color@7.2.0)
@@ -250,6 +253,15 @@ importers:
       '@types/node':
         specifier: ^26.6.5
         version: 26.6.6
+      typescript:
+        specifier: ~5.9.3
+        version: 5.9.3
+      vitest:
+        specifier: ^5.0.5
+        version: 5.1.0(@types/node@26.6.6)(vite@8.3.5(@types/node@26.6.6)(jiti@2.7.0))
+
+  packages/theme:
+    devDependencies:
       typescript:
         specifier: ~5.9.3
         version: 5.9.3
