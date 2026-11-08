@@ -1,6 +1,6 @@
 {
   "name": "@suite/start",
-  "version": "0.3.4",
+  "version": "0.3.5",
   "productName": "Suite Start",
   "desktopName": "suite-start.desktop",
   "private": true,
