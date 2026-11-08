@@ -5,21 +5,22 @@
  * chose, so this file describes *layout and shape* and never a palette. What it does keep is
  * a fallback: if the theme never arrives — a renderer that failed before its first paint —
  * the page still has ink and a surface rather than white-on-white.
- *
- * `--rail` is the one local role: it is the left column, which no other app has, so it is
- * derived from the theme's own surface rather than added to the shared vocabulary.
  */
 :root {
   color-scheme: light dark;
+  --canvas: #f5f5f7;
   --surface: #ffffff;
   --surface-sunk: #f6f6f7;
-  --rail: #f2f2f4;
   --ink: #16161a;
   --ink-muted: #5c5c66;
   --hairline: #e3e3e6;
   --border-strong: #828282;
   --accent: #1f6feb;
   --danger: #b42318;
+  /* The left column, which no other app has, so it is derived rather than a shared role.
+     Derived, not hardcoded: a hardcoded value here is what kept the rail near-white in
+     every dark theme, because nothing overwrote it. */
+  --rail: var(--surface-sunk);
   font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
 }
 
@@ -30,7 +31,10 @@
 body {
   margin: 0;
   min-height: 100vh;
-  background: var(--surface);
+  /* The page is the canvas, cards are the surface raised off it, and the rail is the sunk
+     one. Three roles, three jobs: the app used to paint the page with `--surface` and the
+     cards with `--surface-sunk`, which in light mode is two near-whites and a faint border. */
+  background: var(--canvas);
   color: var(--ink);
   font-size: 14px;
   line-height: 1.5;
@@ -93,11 +97,24 @@ body {
   background: var(--surface);
 }
 
+/*
+ * The selected tab is a card, not a slightly different rectangle.
+ *
+ * `--surface` alone was a single step away from the rail on a dark theme, so "which pane am
+ * I in" was answered by one pixel of border. The raised surface plus a real hairline is what
+ * makes the selection visible in every preset.
+ */
 .rail-tab[aria-selected="true"] {
-  background: var(--surface);
+  background: var(--surface-strong);
   border-color: var(--hairline);
   color: var(--ink);
   font-weight: 600;
+}
+
+/* A selected tab that is also hovered must not lose its edge to the hover rule. */
+.rail-tab[aria-selected="true"]:hover {
+  background: var(--surface-strong);
+  border-color: var(--hairline);
 }
 
 .rail-count {
@@ -105,7 +122,9 @@ body {
   padding: 0 5px;
   border-radius: 9px;
   background: var(--danger);
-  color: var(--surface);
+  /* `--on-danger`, not `--surface`: the theme defines the ink for a filled danger
+     surface, and a preset whose danger is light would otherwise be unreadable. */
+  color: var(--on-danger);
   font-size: 11px;
   font-weight: 600;
   line-height: 18px;
@@ -138,6 +157,15 @@ body {
   max-width: 52ch;
 }
 
+h3 {
+  margin: 24px 0 8px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--ink-muted);
+}
+
 /* A subtitle under a pane's title. h3 is a section label everywhere else — uppercase,
    spaced, and with room above it — so the one place it is a subtitle says so. */
 .pane-head h3 {
@@ -151,15 +179,6 @@ body {
 
 .content section > .pane-head {
   margin-bottom: 16px;
-}
-
-h3 {
-  margin: 24px 0 8px;
-  font-size: 12px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--ink-muted);
 }
 
 .cards {
@@ -177,7 +196,7 @@ h3 {
   border: 1px solid var(--hairline);
   border-radius: 12px;
   padding: 14px 16px;
-  background: var(--surface-sunk);
+  background: var(--surface);
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -261,7 +280,8 @@ h3 {
   margin-top: 10px;
 }
 
-.field {
+.field,
+select {
   font: inherit;
   font-size: 13px;
   padding: 6px 10px;
@@ -274,6 +294,35 @@ h3 {
   color: var(--ink);
 }
 
+/*
+ * A `select` styled as a field.
+ *
+ * The browser's own control is the one thing on this page that ignored the theme: it drew a
+ * grey platform button with a system arrow beside rounded, themed inputs. The appearance is
+ * reset and the arrow drawn as a background image, because a select cannot have a pseudo
+ * element of its own.
+ */
+select {
+  appearance: none;
+  padding-right: 30px;
+  background-image:
+    linear-gradient(45deg, transparent 50%, currentColor 50%),
+    linear-gradient(135deg, currentColor 50%, transparent 50%);
+  background-position:
+    calc(100% - 16px) calc(50% + 1px),
+    calc(100% - 11px) calc(50% + 1px);
+  background-size:
+    5px 5px,
+    5px 5px;
+  background-repeat: no-repeat;
+  cursor: pointer;
+}
+
+select:disabled {
+  color: var(--ink-muted);
+  cursor: default;
+}
+
 .card-actions {
   display: flex;
   flex-wrap: wrap;
@@ -282,6 +331,17 @@ h3 {
   justify-content: flex-end;
   gap: 8px;
   margin-top: 2px;
+}
+
+.button {
+  font: inherit;
+  font-size: 13px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--hairline);
+  background: var(--surface);
+  color: var(--ink);
+  cursor: pointer;
 }
 
 /* A button is a label, not a paragraph: it keeps its width and wraps to the next row
@@ -346,17 +406,6 @@ h3 {
   text-underline-offset: 2px;
 }
 
-.button {
-  font: inherit;
-  font-size: 13px;
-  padding: 6px 12px;
-  border-radius: 8px;
-  border: 1px solid var(--hairline);
-  background: var(--surface);
-  color: var(--ink);
-  cursor: pointer;
-}
-
 .button:hover {
   border-color: var(--ink-muted);
 }
@@ -383,6 +432,7 @@ h3 {
   border: 1px solid var(--hairline);
   border-radius: 12px;
   overflow: hidden;
+  background: var(--surface);
 }
 
 .row {
@@ -472,22 +522,41 @@ h3 {
   color: var(--ink-muted);
 }
 
+/*
+ * A settings list, as label/value rows.
+ *
+ * The label column is fixed rather than `max-content`: with `max-content` one long path in a
+ * value column pushed every label to a different width as panes changed, and the rows stopped
+ * lining up with each other. The top padding is what gives the first row room under the pane
+ * note — it used to sit flush against it, which read as one paragraph.
+ */
 .settings {
   display: grid;
-  grid-template-columns: max-content 1fr;
-  gap: 10px 20px;
+  grid-template-columns: 104px 1fr;
+  gap: 12px 20px;
   margin: 0;
+  padding-top: 2px;
   max-width: 68ch;
+  align-items: start;
 }
 
 .settings dt {
   color: var(--ink-muted);
   font-size: 12px;
+  /* Aligned with the first line of the value, not the top of a tall one. */
+  padding-top: 7px;
 }
 
 .settings dd {
   margin: 0;
   overflow-wrap: anywhere;
+  min-width: 0;
+}
+
+/* A description under a control belongs to that control, not to the next row. */
+.settings dd .pane-note {
+  margin-top: 6px;
+  max-width: 46ch;
 }
 
 .settings ul {

@@ -20,7 +20,7 @@ export const suite: SuiteTheme = {
   light: {
     canvas: "#f5f5f7",
     surface: "#ffffff",
-    "surface-sunk": "#f6f6f7",
+    "surface-sunk": "#eef0f2",
     "surface-strong": "#ffffff",
     accent: "#1f6feb",
     "accent-strong": "#0069d9",
@@ -52,7 +52,7 @@ export const suite: SuiteTheme = {
   dark: {
     canvas: "#16161a",
     surface: "#1d1d22",
-    "surface-sunk": "#1d1d22",
+    "surface-sunk": "#111114",
     "surface-strong": "#232326",
     accent: "#6ea8fe",
     "accent-strong": "#93c0ff",
