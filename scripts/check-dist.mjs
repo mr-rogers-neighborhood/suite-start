@@ -40,6 +40,11 @@ try {
 } catch (error) {
   const detail =
     typeof error === "object" && error !== null && "stdout" in error ? String(error.stdout) : "";
-  process.stderr.write(`check-dist: the build changed committed output\n${detail}`);
+  // The diff covers `packages/` rather than `packages*/*/dist`, so it also catches a change under
+  // `packages/` that was never committed. Both are failures, and they are not the same failure, so
+  // the message names both instead of blaming the build for an unstaged edit.
+  process.stderr.write(
+    `check-dist: the build changed committed output, or packages/ has uncommitted changes\n${detail}`,
+  );
   process.exit(1);
 }
